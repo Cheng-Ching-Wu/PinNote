@@ -41,6 +41,12 @@ pub async fn show_all_notes(app: AppHandle) -> AppResult<usize> {
     notes::show_all(&app)
 }
 
+/// Hides / shows every note window without closing it. Returns `true` when now hidden.
+#[tauri::command]
+pub async fn toggle_notes_hidden(app: AppHandle) -> AppResult<bool> {
+    window::toggle_notes_hidden(&app)
+}
+
 #[tauri::command]
 pub async fn show_main_window(app: AppHandle) -> AppResult<()> {
     window::show_main_window(&app)

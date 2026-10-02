@@ -73,4 +73,10 @@
   button {
     cursor: default;
   }
+
+  /* Note windows are transparent native windows (see main.ts). */
+  .note-window,
+  .note-window body {
+    background: transparent;
+  }
 }

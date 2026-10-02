@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, Download, FolderOpen, Layers, Settings, Upload } from 'lucide-vue-next'
+import { Check, Download, EyeOff, FolderOpen, Keyboard, Layers, Settings, Upload } from 'lucide-vue-next'
 
 import {
   DropdownMenu,
@@ -10,20 +10,24 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { buttonVariants } from '@/components/ui/button'
 
-defineProps<{ autostart: boolean }>()
+defineProps<{ autostart: boolean; pinnedTranslucent: boolean }>()
 
 const emit = defineEmits<{
   'show-all': []
+  'toggle-hidden': []
   'toggle-autostart': []
+  'toggle-translucent': []
+  shortcuts: []
   export: []
   import: []
   'open-backups': []
 }>()
 
-/** Keep the menu open so the new checkbox state is visible. */
-function toggleAutostart(event: Event) {
+/** Checkbox items keep the menu open so the new state is visible. */
+function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent') {
   event.preventDefault()
-  emit('toggle-autostart')
+  if (action === 'toggle-autostart') emit('toggle-autostart')
+  else emit('toggle-translucent')
 }
 </script>
 
@@ -33,17 +37,32 @@ function toggleAutostart(event: Event) {
       <Settings class="size-4" />
     </DropdownMenuTrigger>
 
-    <DropdownMenuContent class="w-52">
+    <DropdownMenuContent class="w-60">
       <DropdownMenuItem @select="emit('show-all')">
         <Layers />
         顯示全部便籤
       </DropdownMenuItem>
+      <DropdownMenuItem @select="emit('toggle-hidden')">
+        <EyeOff />
+        隱藏 / 顯示便籤
+        <span class="ml-auto text-[11px] text-muted-foreground">Ctrl+Alt+H</span>
+      </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem @select="toggleAutostart">
+      <DropdownMenuItem @select="keepOpen($event, 'toggle-translucent')">
+        <span class="flex size-3.5 items-center justify-center rounded-[3px] border border-input">
+          <Check v-if="pinnedTranslucent" class="size-3! text-foreground!" />
+        </span>
+        置頂便籤未使用時半透明
+      </DropdownMenuItem>
+      <DropdownMenuItem @select="keepOpen($event, 'toggle-autostart')">
         <span class="flex size-3.5 items-center justify-center rounded-[3px] border border-input">
           <Check v-if="autostart" class="size-3! text-foreground!" />
         </span>
         開機時自動啟動
+      </DropdownMenuItem>
+      <DropdownMenuItem @select="emit('shortcuts')">
+        <Keyboard />
+        自訂快捷鍵…
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem @select="emit('export')">

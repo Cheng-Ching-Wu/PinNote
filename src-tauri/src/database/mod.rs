@@ -1,6 +1,7 @@
 pub mod backup;
 pub mod migrations;
 pub mod note_repository;
+pub mod settings_repository;
 
 use std::path::Path;
 use std::sync::Mutex;

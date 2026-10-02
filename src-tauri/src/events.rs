@@ -1,20 +1,28 @@
 //! Events broadcast to every webview so each window's store stays in sync.
 
+use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
-use crate::models::Note;
+use crate::models::{AppSettings, Note};
 
 pub const NOTE_CHANGED: &str = "notes:changed";
 pub const NOTE_REMOVED: &str = "notes:removed";
+pub const SETTINGS_CHANGED: &str = "settings:changed";
 
-pub fn note_changed(app: &AppHandle, note: &Note) {
-    if let Err(err) = app.emit(NOTE_CHANGED, note) {
-        eprintln!("[pinnote] failed to emit {NOTE_CHANGED}: {err}");
+fn emit<T: Serialize + Clone>(app: &AppHandle, event: &str, payload: T) {
+    if let Err(err) = app.emit(event, payload) {
+        eprintln!("[pinnote] failed to emit {event}: {err}");
     }
 }
 
+pub fn note_changed(app: &AppHandle, note: &Note) {
+    emit(app, NOTE_CHANGED, note);
+}
+
 pub fn note_removed(app: &AppHandle, id: &str) {
-    if let Err(err) = app.emit(NOTE_REMOVED, id) {
-        eprintln!("[pinnote] failed to emit {NOTE_REMOVED}: {err}");
-    }
+    emit(app, NOTE_REMOVED, id);
+}
+
+pub fn settings_changed(app: &AppHandle, settings: &AppSettings) {
+    emit(app, SETTINGS_CHANGED, settings);
 }

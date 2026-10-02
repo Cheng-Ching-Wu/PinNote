@@ -1,7 +1,4 @@
-/*
- * Note palette. `--note-body` must match `note_background()` in
- * src-tauri/src/services/window.rs (initial webview background).
- */
+/* Note palette, applied through NOTE_COLOR_CLASSES (src/constants/noteColors.ts). */
 .note-yellow {
   --note-body: #fff7bf;
   --note-header: #fcec8f;

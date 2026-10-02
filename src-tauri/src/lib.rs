@@ -24,6 +24,7 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec![lifecycle::AUTOSTART_ARG]),
         ))
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(AppState::default())
@@ -45,8 +46,13 @@ pub fn run() {
             commands::windows::open_note_window,
             commands::windows::close_note_window,
             commands::windows::show_all_notes,
+            commands::windows::toggle_notes_hidden,
             commands::windows::show_main_window,
             commands::app::get_shortcut_status,
+            commands::app::set_shortcut,
+            commands::app::set_shortcuts_paused,
+            commands::app::get_settings,
+            commands::app::update_settings,
             commands::app::get_autostart,
             commands::app::set_autostart,
             commands::app::export_notes,

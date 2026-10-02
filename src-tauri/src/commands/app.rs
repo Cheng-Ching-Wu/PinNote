@@ -1,14 +1,47 @@
-use tauri::{AppHandle, State};
+use tauri::AppHandle;
 use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_opener::OpenerExt;
 
 use crate::error::{AppError, AppResult};
+use crate::models::{AppSettings, AppSettingsPatch};
 use crate::services::transfer::{self, TransferResult};
-use crate::state::{AppState, ShortcutStatus};
+use crate::services::{settings, shortcut};
+use crate::state::ShortcutStatus;
 
 #[tauri::command]
-pub fn get_shortcut_status(state: State<'_, AppState>) -> Option<ShortcutStatus> {
-    state.shortcut.lock().ok().map(|status| status.clone())
+pub fn get_shortcut_status(app: AppHandle) -> Vec<ShortcutStatus> {
+    shortcut::statuses(&app)
+}
+
+/// `accelerator` "" disables the action. Returns all statuses after the change.
+#[tauri::command]
+pub fn set_shortcut(
+    app: AppHandle,
+    action: String,
+    accelerator: String,
+) -> AppResult<Vec<ShortcutStatus>> {
+    shortcut::set(&app, &action, &accelerator)
+}
+
+/// Paused while the user records a new shortcut; resuming re-registers all.
+#[tauri::command]
+pub fn set_shortcuts_paused(app: AppHandle, paused: bool) -> AppResult<Vec<ShortcutStatus>> {
+    if paused {
+        shortcut::pause(&app)?;
+    } else {
+        shortcut::register_all(&app);
+    }
+    Ok(shortcut::statuses(&app))
+}
+
+#[tauri::command]
+pub fn get_settings(app: AppHandle) -> AppResult<AppSettings> {
+    settings::get(&app)
+}
+
+#[tauri::command]
+pub fn update_settings(app: AppHandle, data: AppSettingsPatch) -> AppResult<AppSettings> {
+    settings::update(&app, &data)
 }
 
 #[tauri::command]

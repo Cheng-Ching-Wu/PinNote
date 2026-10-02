@@ -2,6 +2,7 @@
 //! Every mutation is persisted first, then broadcast to all windows.
 
 use tauri::{AppHandle, Manager};
+use tauri_plugin_clipboard_manager::ClipboardExt;
 
 use crate::database::{note_repository as repo, Database};
 use crate::error::AppResult;
@@ -37,6 +38,28 @@ pub fn create_and_open(app: &AppHandle) -> AppResult<Note> {
     Ok(note)
 }
 
+/// Ctrl+Alt+V: a new note holding the clipboard text. A clipboard without
+/// text (e.g. an image) just gives an empty note.
+pub fn create_from_clipboard(app: &AppHandle) -> AppResult<Note> {
+    let text = app
+        .clipboard()
+        .read_text()
+        .unwrap_or_default()
+        .replace("\r\n", "\n");
+    let text = text.trim_end();
+
+    let mut note = create(app)?;
+    if !text.is_empty() {
+        let patch = NoteUpdate {
+            content: Some(text.to_string()),
+            ..Default::default()
+        };
+        note = update(app, &note.id, &patch)?;
+    }
+    window::open_note_window(app, &note, true)?;
+    Ok(note)
+}
+
 pub fn update(app: &AppHandle, id: &str, patch: &NoteUpdate) -> AppResult<Note> {
     let note = db(app).with_conn(|conn| repo::update(conn, id, patch))?;
     if patch.title.is_some() {
@@ -58,8 +81,10 @@ pub fn set_open(app: &AppHandle, id: &str, is_open: bool) -> AppResult<Note> {
     Ok(note)
 }
 
-/// Puts every active note back on the desktop. Returns how many notes are shown.
+/// Puts every active note back on the desktop (also undoing Ctrl+Alt+H).
+/// Returns how many notes are shown.
 pub fn show_all(app: &AppHandle) -> AppResult<usize> {
+    window::set_notes_hidden(app, false)?;
     let active: Vec<Note> = list(app)?
         .into_iter()
         .filter(|note| note.status == NoteStatus::Active)

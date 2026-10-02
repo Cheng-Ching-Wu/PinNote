@@ -118,6 +118,11 @@ export const useNoteStore = defineStore('note', () => {
     if (shown !== undefined) notice.value = shown > 0 ? `已顯示 ${shown} 張便籤` : '沒有可顯示的便籤'
   }
 
+  async function toggleNotesHidden() {
+    const hidden = await run('隱藏 / 顯示便籤失敗', () => windowService.toggleNotesHidden())
+    if (hidden !== undefined) notice.value = hidden ? '已暫時隱藏所有便籤（Ctrl+Alt+H 可再顯示）' : '已重新顯示便籤'
+  }
+
   async function exportNotes() {
     const result = await run('匯出失敗', () => noteRepository.exportNotes())
     if (result) notice.value = `已匯出 ${result.count} 張便籤到 ${result.path}`
@@ -166,6 +171,7 @@ export const useNoteStore = defineStore('note', () => {
     openNoteWindow,
     closeNoteWindow,
     showAllNotes,
+    toggleNotesHidden,
     exportNotes,
     importNotes,
     startSync,

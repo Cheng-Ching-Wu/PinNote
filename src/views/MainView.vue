@@ -4,13 +4,15 @@ import { CircleAlert, CircleCheck, Plus, Search, StickyNote, X } from 'lucide-vu
 
 import MainMenu from '@/components/main/MainMenu.vue'
 import NoteListItem from '@/components/main/NoteListItem.vue'
+import ShortcutSettingsDialog from '@/components/main/ShortcutSettingsDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Note } from '@/models/note'
-import { shortcutService, type ShortcutStatus } from '@/services/shortcutService'
 import { matchesQuery, useNoteStore } from '@/stores/note'
 import { useSettingsStore } from '@/stores/settings'
+import { useShortcutStore } from '@/stores/shortcuts'
+import { formatAccelerator } from '@/utils/accelerator'
 
 type Tab = 'active' | 'archived' | 'deleted'
 
@@ -26,7 +28,15 @@ function dismissError() {
 
 const tab = ref<Tab>('active')
 const query = ref('')
-const shortcut = ref<ShortcutStatus | null>(null)
+const shortcutStore = useShortcutStore()
+const shortcutDialogOpen = ref(false)
+const failedShortcuts = computed(() => shortcutStore.failed)
+const shortcutHint = computed(() => {
+  const active = shortcutStore.statuses.filter((s) => s.accelerator)
+  return active.length
+    ? active.map((s) => `${formatAccelerator(s.accelerator)} ${s.label}`).join(' · ')
+    : '關閉此視窗會縮到系統匣'
+})
 
 const tabs = computed<{ value: Tab; label: string; notes: Note[] }[]>(() => [
   { value: 'active', label: '全部', notes: store.activeNotes },
@@ -59,8 +69,8 @@ function onKeydown(event: KeyboardEvent) {
 
 onMounted(async () => {
   window.addEventListener('keydown', onKeydown)
-  await Promise.all([store.loadNotes(), settings.load()])
-  shortcut.value = await shortcutService.getStatus().catch(() => null)
+  await Promise.all([store.loadNotes(), settings.loadSettings(), settings.loadAutostart()])
+  await shortcutStore.load()
 })
 
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
@@ -77,8 +87,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         <div class="flex items-center gap-1">
           <MainMenu
             :autostart="settings.autostart"
+            :pinned-translucent="settings.settings.pinnedTranslucent"
             @show-all="store.showAllNotes()"
+            @toggle-hidden="store.toggleNotesHidden()"
             @toggle-autostart="settings.setAutostart(!settings.autostart)"
+            @shortcuts="shortcutDialogOpen = true"
+            @toggle-translucent="settings.updateSettings({ pinnedTranslucent: !settings.settings.pinnedTranslucent })"
             @export="store.exportNotes()"
             @import="store.importNotes()"
             @open-backups="settings.openBackupFolder()"
@@ -150,10 +164,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     </div>
 
     <footer class="border-t px-4 py-2 text-[11px] text-muted-foreground">
-      <span v-if="shortcut && !shortcut.registered" class="text-destructive" :title="shortcut.error ?? ''">
-        快捷鍵 {{ shortcut.accelerator }} 註冊失敗，可能已被其他程式占用
-      </span>
-      <span v-else>{{ shortcut?.accelerator || 'Ctrl+Alt+N' }} 隨時新增便籤 · 關閉此視窗會縮到系統匣</span>
+      <p
+        v-for="item in failedShortcuts"
+        :key="item.accelerator"
+        class="text-destructive"
+        :title="item.error ?? ''"
+      >
+        快捷鍵 {{ formatAccelerator(item.accelerator) }}（{{ item.label }}）註冊失敗，可能已被其他程式占用，
+        <button type="button" class="underline" @click="shortcutDialogOpen = true">更換按鍵</button>
+      </p>
+      <p v-if="failedShortcuts.length === 0" class="truncate" :title="shortcutHint">{{ shortcutHint }}</p>
     </footer>
+
+    <ShortcutSettingsDialog v-model:open="shortcutDialogOpen" />
   </div>
 </template>

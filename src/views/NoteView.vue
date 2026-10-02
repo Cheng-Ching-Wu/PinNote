@@ -4,6 +4,7 @@ import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import NoteEditor from '@/components/note/NoteEditor.vue'
 import NoteHeader from '@/components/note/NoteHeader.vue'
 import { useNoteDraft } from '@/composables/useNoteDraft'
+import { useNoteTranslucency } from '@/composables/useNoteTranslucency'
 import { useNoteWindow } from '@/composables/useNoteWindow'
 import { NOTE_COLOR_CLASSES } from '@/constants/noteColors'
 import { CONTENT_SAVE_DELAY } from '@/constants/window'
@@ -16,6 +17,7 @@ const props = defineProps<{ id: string }>()
 const store = useNoteStore()
 const { note, toggleAlwaysOnTop, toggleCollapsed, setColor } = useNoteWindow(props.id)
 const { title, content, init, flush } = useNoteDraft(props.id, CONTENT_SAVE_DELAY)
+const { faded, onPointerEnter, onPointerLeave } = useNoteTranslucency(note)
 
 const editorRef = useTemplateRef<InstanceType<typeof NoteEditor>>('editorRef')
 
@@ -65,8 +67,14 @@ async function remove() {
   <div
     v-if="note"
     :class="
-      cn(NOTE_COLOR_CLASSES[note.color], 'group/note flex h-screen flex-col overflow-hidden bg-note-body text-note-ink')
+      cn(
+        NOTE_COLOR_CLASSES[note.color],
+        'group/note flex h-screen flex-col overflow-hidden bg-note-body text-note-ink transition-opacity duration-200',
+        faded ? 'opacity-55' : 'opacity-100',
+      )
     "
+    @pointerenter="onPointerEnter"
+    @pointerleave="onPointerLeave"
   >
     <NoteHeader
       v-model:title="title"

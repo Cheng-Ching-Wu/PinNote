@@ -6,7 +6,8 @@ use tauri::{
 };
 
 use crate::error::AppResult;
-use crate::models::{Note, NoteColor, NoteUpdate};
+use crate::models::{Note, NoteUpdate};
+use crate::state::AppState;
 
 pub const MAIN_LABEL: &str = "main";
 const NOTE_LABEL_PREFIX: &str = "note-";
@@ -85,7 +86,9 @@ pub fn open_note_window(app: &AppHandle, note: &Note, focus: bool) -> AppResult<
         .minimizable(false)
         .skip_taskbar(true)
         .always_on_top(note.always_on_top)
-        .background_color(note_background(note.color))
+        // Transparent so pinned notes can fade (CSS opacity) to show what's
+        // behind them; this also means no white flash while the page loads.
+        .transparent(true)
         .focused(focus);
     builder = match saved_position {
         // Approximate placement up front so the window doesn't flash elsewhere first.
@@ -155,16 +158,28 @@ fn window_title(note: &Note) -> String {
     }
 }
 
-/// Initial webview background, so a note doesn't flash white while loading.
-/// Keep in sync with `--note-body` in `src/styles/note-colors.css`.
-fn note_background(color: NoteColor) -> Color {
-    match color {
-        NoteColor::Yellow => Color(255, 247, 191, 255),
-        NoteColor::Blue => Color(220, 236, 252, 255),
-        NoteColor::Green => Color(222, 245, 216, 255),
-        NoteColor::Pink => Color(252, 225, 236, 255),
-        NoteColor::Gray => Color(238, 238, 236, 255),
+/// Ctrl+Alt+H: hides (or shows again) every note window without closing it,
+/// so `is_open` and the desktop layout are untouched.
+pub fn set_notes_hidden(app: &AppHandle, hidden: bool) -> AppResult<()> {
+    for (label, window) in app.webview_windows() {
+        if note_id_from_label(&label).is_none() {
+            continue;
+        }
+        if hidden {
+            window.hide()?;
+        } else {
+            window.show()?;
+        }
     }
+    app.state::<AppState>().set_notes_hidden(hidden);
+    Ok(())
+}
+
+/// Returns the new state: `true` when the notes are now hidden.
+pub fn toggle_notes_hidden(app: &AppHandle) -> AppResult<bool> {
+    let hidden = !app.state::<AppState>().notes_hidden();
+    set_notes_hidden(app, hidden)?;
+    Ok(hidden)
 }
 
 /// Scale factor of the monitor showing the top-left area of a saved position,

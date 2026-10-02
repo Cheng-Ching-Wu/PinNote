@@ -1,0 +1,107 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { Archive, ArchiveRestore, Ellipsis, ExternalLink, RotateCcw, Trash2 } from 'lucide-vue-next'
+
+import { buttonVariants } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
+import type { NoteStatus } from '@/models/note'
+
+defineProps<{ status: NoteStatus }>()
+
+const emit = defineEmits<{
+  open: []
+  archive: []
+  restore: []
+  delete: []
+  'delete-permanently': []
+}>()
+
+const open = ref(false)
+/** Permanent deletion needs a second click; reset whenever the menu closes. */
+const confirming = ref(false)
+
+function onOpenChange(value: boolean) {
+  open.value = value
+  if (!value) confirming.value = false
+}
+
+function deletePermanently(event: Event) {
+  if (!confirming.value) {
+    event.preventDefault() // keep the menu open for the confirmation click
+    confirming.value = true
+    return
+  }
+  emit('delete-permanently')
+}
+</script>
+
+<template>
+  <DropdownMenu :open="open" :modal="false" @update:open="onOpenChange">
+    <DropdownMenuTrigger
+      :class="
+        cn(
+          buttonVariants({ variant: 'ghost', size: 'icon-xs' }),
+          'text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:bg-accent data-[state=open]:opacity-100',
+        )
+      "
+      title="更多動作"
+      @click.stop
+      @keydown.enter.stop
+    >
+      <Ellipsis class="size-4" />
+    </DropdownMenuTrigger>
+
+    <DropdownMenuContent class="w-40" @click.stop>
+      <template v-if="status === 'active'">
+        <DropdownMenuItem @select="emit('open')">
+          <ExternalLink />
+          開啟便籤
+        </DropdownMenuItem>
+        <DropdownMenuItem @select="emit('archive')">
+          <Archive />
+          封存
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" @select="emit('delete')">
+          <Trash2 />
+          移到垃圾桶
+        </DropdownMenuItem>
+      </template>
+
+      <template v-else-if="status === 'archived'">
+        <DropdownMenuItem @select="emit('restore')">
+          <ArchiveRestore />
+          取消封存
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" @select="emit('delete')">
+          <Trash2 />
+          移到垃圾桶
+        </DropdownMenuItem>
+      </template>
+
+      <template v-else>
+        <DropdownMenuItem @select="emit('restore')">
+          <RotateCcw />
+          恢復
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          :class="confirming && 'bg-destructive/10 font-medium'"
+          @select="deletePermanently"
+        >
+          <Trash2 />
+          {{ confirming ? '再按一次確認刪除' : '永久刪除' }}
+        </DropdownMenuItem>
+      </template>
+    </DropdownMenuContent>
+  </DropdownMenu>
+</template>

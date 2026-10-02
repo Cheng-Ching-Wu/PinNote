@@ -41,7 +41,7 @@ pub fn startup(app: &AppHandle) -> AppResult<()> {
     if let Err(err) = tray::init(app) {
         eprintln!("[pinnote] failed to create tray icon: {err}");
     }
-    shortcut::register(app);
+    shortcut::register_all(app);
 
     Ok(())
 }

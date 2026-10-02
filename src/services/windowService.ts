@@ -23,6 +23,11 @@ export const windowService = {
     return invoke('show_all_notes')
   },
 
+  /** Hides / shows every note window (Ctrl+Alt+H); resolves to true when now hidden. */
+  toggleNotesHidden(): Promise<boolean> {
+    return invoke('toggle_notes_hidden')
+  },
+
   showMainWindow(): Promise<void> {
     return invoke('show_main_window')
   },
@@ -31,6 +36,10 @@ export const windowService = {
   currentNoteId(): string | null {
     const label = getCurrentWindow().label
     return label.startsWith(NOTE_LABEL_PREFIX) ? label.slice(NOTE_LABEL_PREFIX.length) : null
+  },
+
+  onFocusChanged(handler: (focused: boolean) => void): Promise<UnlistenFn> {
+    return getCurrentWindow().onFocusChanged(({ payload }) => handler(payload))
   },
 
   setAlwaysOnTop(value: boolean): Promise<void> {

@@ -21,6 +21,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "add_note_is_open",
         sql: include_str!("../../migrations/0002_add_note_is_open.sql"),
     },
+    Migration {
+        version: 3,
+        name: "create_settings",
+        sql: include_str!("../../migrations/0003_create_settings.sql"),
+    },
 ];
 
 /// Applies every migration newer than the recorded schema version,

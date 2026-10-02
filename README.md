@@ -69,6 +69,13 @@ Rust service → note_repository → SQLite (rusqlite)
 - `updatedAt` 只在標題、內容、顏色變更時更新；拖曳、縮放、置頂、收合不會影響清單排序。
 - 刪除採 soft delete（`status = 'deleted'`、`deletedAt`），可從垃圾桶恢復或永久刪除。
 - **Markdown 編輯**（Tiptap）：所見即所得，內容以 Markdown 存在 `content` 欄位，舊的純文字便籤直接相容（單一換行視為換行）。支援 Markdown 快速輸入（`# `、`- `、`1. `、`[ ] `、`> `、```` ``` ````、`**粗體**`、`==標記==`…）與底部格式列（hover 或編輯時顯示）。底線存為 `++文字++`、螢光標記存為 `==文字==`。連結需 **Ctrl+點擊** 才會用系統瀏覽器開啟（只允許 http / https / mailto）。設定在 `src/lib/noteEditor.ts`。
+- **全域快捷鍵**（Rust 端註冊，可在「設定 → 自訂快捷鍵」錄製、停用或恢復預設；存於 `settings` 表 `shortcut.<action>`）。預設：
+  - `Ctrl+Alt+N` 新增便籤
+  - `Ctrl+Alt+V` 以剪貼簿文字建立便籤（剪貼簿沒有文字時建立空白便籤）
+  - `Ctrl+Alt+H` 暫時隱藏 / 顯示所有便籤視窗（不改變 `isOpen`，重開 App 一律顯示）
+
+  錄製時會暫停所有全域快捷鍵。單鍵只接受 F1–F24（適合鍵盤巨集鍵），其他按鍵需搭配 Ctrl / Alt / Shift / Win；與其他動作重複或被其他程式占用時會保留原設定。
+- **置頂便籤半透明**：置頂便籤在沒有 focus、滑鼠也不在上面時淡出，可在設定選單關閉。便籤視窗因此是透明的原生視窗；偏好設定存在 SQLite `settings` 表（migration 0003），變更時廣播 `settings:changed`。
 - 管理視窗清單會標示「未顯示」（已用 × 關閉）的便籤；設定選單與系統匣都有「顯示全部便籤」。
 - **開機自動啟動**（設定選單）：開機啟動時帶 `--autostart`，只還原桌面便籤，不開管理視窗。
 - **自動備份**：每天第一次啟動、執行 migration 之前，以 `VACUUM INTO` 備份到 `%APPDATA%\com.pinnote.app\backups\pinnote-YYYYMMDD.db`，保留最近 7 份。還原方式：結束 App，用備份檔覆蓋 `pinnote.db`。
