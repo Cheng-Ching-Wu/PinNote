@@ -23,6 +23,35 @@ export function useHorizontalOverflow(element: Readonly<Ref<HTMLElement | null>>
     el.scrollBy({ left: direction * Math.max(el.clientWidth * 0.7, 48), behavior: 'smooth' })
   }
 
+  let frame: number | undefined
+  let lastTime: number | undefined
+
+  /**
+   * Scrolls continuously (px per second) until `stopAutoScroll` or an end is reached —
+   * used while the pointer rests on an arrow.
+   */
+  function startAutoScroll(direction: -1 | 1, speed = 240) {
+    stopAutoScroll()
+    const step = (time: number) => {
+      const el = element.value
+      if (!el) return stopAutoScroll()
+      const elapsed = lastTime === undefined ? 16 : Math.min(time - lastTime, 50)
+      lastTime = time
+      el.scrollLeft += direction * speed * (elapsed / 1000)
+      update()
+      const atEnd = direction < 0 ? !canScrollLeft.value : !canScrollRight.value
+      if (atEnd) return stopAutoScroll()
+      frame = requestAnimationFrame(step)
+    }
+    frame = requestAnimationFrame(step)
+  }
+
+  function stopAutoScroll() {
+    if (frame !== undefined) cancelAnimationFrame(frame)
+    frame = undefined
+    lastTime = undefined
+  }
+
   /** Lets a normal (vertical) mouse wheel scroll the bar sideways. */
   function onWheel(event: WheelEvent) {
     const el = element.value
@@ -46,11 +75,12 @@ export function useHorizontalOverflow(element: Readonly<Ref<HTMLElement | null>>
   })
 
   onBeforeUnmount(() => {
+    stopAutoScroll()
     const el = element.value
     el?.removeEventListener('scroll', update)
     el?.removeEventListener('wheel', onWheel)
     resizeObserver?.disconnect()
   })
 
-  return { canScrollLeft, canScrollRight, scrollByPage, update }
+  return { canScrollLeft, canScrollRight, scrollByPage, startAutoScroll, stopAutoScroll, update }
 }

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { createApp, defineComponent, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { useHorizontalOverflow } from '@/composables/useHorizontalOverflow'
 
@@ -53,6 +53,35 @@ describe('useHorizontalOverflow', () => {
     el.dispatchEvent(new Event('scroll'))
     expect(state.canScrollLeft.value).toBe(true)
     expect(state.canScrollRight.value).toBe(false)
+    app.unmount()
+  })
+
+  it('auto-scrolls while hovering an arrow and stops at the end', () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    const runFrame = (time: number) => frames.shift()?.(time)
+
+    const el = fakeScroller(100, 200)
+    const { state, app } = mountWith(el)
+
+    state.startAutoScroll(1, 1000) // 1000 px/s
+    runFrame(0) // first frame assumes ~16ms
+    runFrame(50) // +50ms → +50px
+    expect(el.scrollLeft).toBeCloseTo(66, 0)
+
+    state.stopAutoScroll()
+    expect(frames.length).toBeGreaterThan(0)
+    frames.length = 0
+    runFrame(100)
+    expect(el.scrollLeft).toBeCloseTo(66, 0) // nothing scheduled after stop
+
+    state.startAutoScroll(1, 1000)
+    for (let t = 0; t < 2000 && frames.length; t += 50) runFrame(t)
+    expect(state.canScrollRight.value).toBe(false)
+    expect(frames.length).toBe(0) // loop ended by itself at the end
+
+    vi.unstubAllGlobals()
     app.unmount()
   })
 

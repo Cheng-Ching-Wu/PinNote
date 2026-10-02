@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Component, useTemplateRef } from 'vue'
+import { type Component, ref, useTemplateRef } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
 import {
   Bold,
@@ -40,7 +40,15 @@ const arrowClass =
 
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 const scroller = useTemplateRef<HTMLDivElement>('scroller')
-const { canScrollLeft, canScrollRight, scrollByPage } = useHorizontalOverflow(scroller)
+const { canScrollLeft, canScrollRight, scrollByPage, startAutoScroll, stopAutoScroll } =
+  useHorizontalOverflow(scroller)
+
+const barHovered = ref(false)
+
+function onBarLeave() {
+  barHovered.value = false
+  stopAutoScroll()
+}
 
 function onFilesPicked(event: Event) {
   const input = event.target as HTMLInputElement
@@ -81,13 +89,23 @@ const items: (ToolbarItem | null)[] = [
 
 <template>
   <!-- mousedown.prevent keeps the text selection while clicking a button. -->
-  <div class="flex h-7 shrink-0 items-center border-t border-note-border/50" @mousedown.prevent>
-    <!-- Arrows only appear while buttons are cut off (e.g. the note was resized narrower). -->
+  <div
+    class="flex h-7 shrink-0 items-center border-t border-note-border/50"
+    @mousedown.prevent
+    @pointerenter="barHovered = true"
+    @pointerleave="onBarLeave"
+  >
+    <!--
+      Arrows appear only while the pointer is on the toolbar and buttons are cut off
+      (e.g. the note was resized narrower). Resting on an arrow scrolls; clicking pages.
+    -->
     <button
-      v-if="canScrollLeft"
+      v-if="barHovered && canScrollLeft"
       type="button"
       :class="arrowClass"
       title="向左捲動工具列"
+      @pointerenter="startAutoScroll(-1)"
+      @pointerleave="stopAutoScroll"
       @click="scrollByPage(-1)"
     >
       <ChevronLeft class="size-3.5" />
@@ -118,10 +136,12 @@ const items: (ToolbarItem | null)[] = [
     </div>
 
     <button
-      v-if="canScrollRight"
+      v-if="barHovered && canScrollRight"
       type="button"
       :class="arrowClass"
       title="向右捲動工具列"
+      @pointerenter="startAutoScroll(1)"
+      @pointerleave="stopAutoScroll"
       @click="scrollByPage(1)"
     >
       <ChevronRight class="size-3.5" />
