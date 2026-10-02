@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { CircleAlert, Plus, Search, StickyNote, X } from 'lucide-vue-next'
+import { CircleAlert, CircleCheck, Plus, Search, StickyNote, X } from 'lucide-vue-next'
 
+import MainMenu from '@/components/main/MainMenu.vue'
 import NoteListItem from '@/components/main/NoteListItem.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,10 +10,19 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Note } from '@/models/note'
 import { shortcutService, type ShortcutStatus } from '@/services/shortcutService'
 import { matchesQuery, useNoteStore } from '@/stores/note'
+import { useSettingsStore } from '@/stores/settings'
 
 type Tab = 'active' | 'archived' | 'deleted'
 
 const store = useNoteStore()
+const settings = useSettingsStore()
+
+const errorText = computed(() => store.lastError ?? settings.error)
+
+function dismissError() {
+  store.lastError = null
+  settings.error = null
+}
 
 const tab = ref<Tab>('active')
 const query = ref('')
@@ -49,7 +59,7 @@ function onKeydown(event: KeyboardEvent) {
 
 onMounted(async () => {
   window.addEventListener('keydown', onKeydown)
-  await store.loadNotes()
+  await Promise.all([store.loadNotes(), settings.load()])
   shortcut.value = await shortcutService.getStatus().catch(() => null)
 })
 
@@ -64,10 +74,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <StickyNote class="size-4" />
           PinNote
         </h1>
-        <Button size="sm" @click="store.createNote()">
-          <Plus class="size-3.5" />
-          新增便籤
-        </Button>
+        <div class="flex items-center gap-1">
+          <MainMenu
+            :autostart="settings.autostart"
+            @show-all="store.showAllNotes()"
+            @toggle-autostart="settings.setAutostart(!settings.autostart)"
+            @export="store.exportNotes()"
+            @import="store.importNotes()"
+            @open-backups="settings.openBackupFolder()"
+          />
+          <Button size="sm" @click="store.createNote()">
+            <Plus class="size-3.5" />
+            新增便籤
+          </Button>
+        </div>
       </div>
 
       <div class="relative">
@@ -111,12 +131,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     </main>
 
     <div
-      v-if="store.lastError"
+      v-if="errorText"
       class="mx-3 mb-2 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-2.5 py-2 text-xs text-destructive"
     >
       <CircleAlert class="mt-px size-3.5 shrink-0" />
-      <span class="flex-1 break-all">{{ store.lastError }}</span>
-      <button type="button" class="shrink-0 hover:underline" @click="store.lastError = null">關閉</button>
+      <span class="flex-1 break-all">{{ errorText }}</span>
+      <button type="button" class="shrink-0 hover:underline" @click="dismissError">關閉</button>
+    </div>
+    <div
+      v-else-if="store.notice"
+      class="mx-3 mb-2 flex items-start gap-2 rounded-md border bg-card px-2.5 py-2 text-xs text-foreground"
+    >
+      <CircleCheck class="mt-px size-3.5 shrink-0 text-emerald-600" />
+      <span class="flex-1 break-all">{{ store.notice }}</span>
+      <button type="button" class="shrink-0 text-muted-foreground hover:underline" @click="store.notice = null">
+        關閉
+      </button>
     </div>
 
     <footer class="border-t px-4 py-2 text-[11px] text-muted-foreground">

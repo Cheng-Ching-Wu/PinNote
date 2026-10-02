@@ -68,6 +68,11 @@ Rust service → note_repository → SQLite (rusqlite)
 - **收合**只把視窗縮成標題列，`height` 永遠保存展開時的高度，展開即還原。
 - `updatedAt` 只在標題、內容、顏色變更時更新；拖曳、縮放、置頂、收合不會影響清單排序。
 - 刪除採 soft delete（`status = 'deleted'`、`deletedAt`），可從垃圾桶恢復或永久刪除。
+- **Markdown 編輯**（Tiptap）：所見即所得，內容以 Markdown 存在 `content` 欄位，舊的純文字便籤直接相容（單一換行視為換行）。支援 Markdown 快速輸入（`# `、`- `、`1. `、`[ ] `、`> `、```` ``` ````、`**粗體**`、`==標記==`…）與底部格式列（hover 或編輯時顯示）。底線存為 `++文字++`、螢光標記存為 `==文字==`。連結需 **Ctrl+點擊** 才會用系統瀏覽器開啟（只允許 http / https / mailto）。設定在 `src/lib/noteEditor.ts`。
+- 管理視窗清單會標示「未顯示」（已用 × 關閉）的便籤；設定選單與系統匣都有「顯示全部便籤」。
+- **開機自動啟動**（設定選單）：開機啟動時帶 `--autostart`，只還原桌面便籤，不開管理視窗。
+- **自動備份**：每天第一次啟動、執行 migration 之前，以 `VACUUM INTO` 備份到 `%APPDATA%\com.pinnote.app\backups\pinnote-YYYYMMDD.db`，保留最近 7 份。還原方式：結束 App，用備份檔覆蓋 `pinnote.db`。
+- **匯出 / 匯入 JSON**（設定選單）：匯出包含所有狀態的便籤；匯入時 id 已存在的便籤會略過，所以重複匯入同一個檔案不會產生重複便籤。匯入的便籤不會自動開到桌面。
 
 ## 後續擴充預留
 

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
-import { Archive, ArchiveRestore, Pin, RotateCcw, Trash2 } from 'lucide-vue-next'
+import { Archive, ArchiveRestore, EyeOff, Pin, RotateCcw, Trash2 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { NOTE_COLOR_CLASSES } from '@/constants/noteColors'
 import { cn } from '@/lib/utils'
 import type { Note } from '@/models/note'
+import { markdownToPlainText } from '@/utils/markdown'
 import { formatNoteTime } from '@/utils/time'
 
 const props = defineProps<{ note: Note }>()
@@ -19,7 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const lines = computed(() =>
-  props.note.content
+  markdownToPlainText(props.note.content)
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean),
@@ -36,6 +37,8 @@ const timeLabel = computed(() =>
 )
 
 const isActive = computed(() => props.note.status === 'active')
+/** Active, but its window was closed with × — not on the desktop right now. */
+const isHidden = computed(() => isActive.value && !props.note.isOpen)
 
 // Permanent deletion needs a second click within a few seconds.
 const confirming = ref(false)
@@ -61,6 +64,7 @@ onBeforeUnmount(() => clearTimeout(confirmTimer))
         NOTE_COLOR_CLASSES[note.color],
         'group relative flex gap-2.5 rounded-md border bg-card py-2.5 pr-3 pl-2.5 transition-colors',
         isActive && 'hover:border-ring/50 hover:bg-note-body/40',
+        isHidden && 'bg-muted/50',
       )
     "
     :role="isActive ? 'button' : undefined"
@@ -76,6 +80,10 @@ onBeforeUnmount(() => clearTimeout(confirmTimer))
       <div class="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
         <span>{{ timeLabel }}</span>
         <Pin v-if="note.alwaysOnTop && isActive" class="size-3 fill-current" />
+        <span v-if="isHidden" class="inline-flex items-center gap-0.5" title="這張便籤已關閉，點擊即可重新顯示在桌面">
+          <EyeOff class="size-3" />
+          未顯示
+        </span>
       </div>
     </div>
 

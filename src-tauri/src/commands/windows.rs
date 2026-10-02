@@ -35,6 +35,12 @@ pub async fn close_note_window(app: AppHandle, id: String) -> AppResult<()> {
     Ok(())
 }
 
+/// Reopens the window of every active note. Returns the number of notes shown.
+#[tauri::command]
+pub async fn show_all_notes(app: AppHandle) -> AppResult<usize> {
+    notes::show_all(&app)
+}
+
 #[tauri::command]
 pub async fn show_main_window(app: AppHandle) -> AppResult<()> {
     window::show_main_window(&app)

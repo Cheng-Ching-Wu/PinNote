@@ -85,6 +85,20 @@ pub fn insert(conn: &Connection, position: Option<(i64, i64)>) -> AppResult<Note
     get(conn, &id)
 }
 
+/// Inserts a complete note (e.g. from an import), keeping its id and timestamps.
+/// Returns false without changes when a note with that id already exists.
+pub fn insert_if_absent(conn: &Connection, note: &Note) -> AppResult<bool> {
+    let inserted = conn.execute(
+        "INSERT OR IGNORE INTO notes (id, created_at, updated_at) VALUES (?1, ?2, ?3)",
+        params![note.id, note.created_at, note.updated_at],
+    )?;
+    if inserted == 0 {
+        return Ok(false);
+    }
+    save(conn, note)?;
+    Ok(true)
+}
+
 fn save(conn: &Connection, note: &Note) -> AppResult<()> {
     conn.execute(
         "UPDATE notes SET
@@ -244,6 +258,35 @@ mod tests {
             delete(conn, &note.id).unwrap();
             assert!(find(conn, &note.id).unwrap().is_none());
             assert!(delete(conn, &note.id).is_err());
+        });
+    }
+
+    #[test]
+    fn insert_if_absent_keeps_existing_notes() {
+        with_db(|conn| {
+            let original = insert(conn, None).unwrap();
+            update(
+                conn,
+                &original.id,
+                &NoteUpdate {
+                    content: Some("local".into()),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let mut imported = original.clone();
+            imported.content = "from file".into();
+            assert!(!insert_if_absent(conn, &imported).unwrap());
+            assert_eq!(get(conn, &original.id).unwrap().content, "local");
+
+            imported.id = "imported-1".into();
+            imported.color = NoteColor::Pink;
+            assert!(insert_if_absent(conn, &imported).unwrap());
+            let stored = get(conn, "imported-1").unwrap();
+            assert_eq!(stored.content, "from file");
+            assert_eq!(stored.color, NoteColor::Pink);
+            assert_eq!(stored.created_at, original.created_at);
         });
     }
 }

@@ -1,3 +1,4 @@
+pub mod backup;
 pub mod migrations;
 pub mod note_repository;
 

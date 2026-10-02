@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 
+import NoteEditor from '@/components/note/NoteEditor.vue'
 import NoteHeader from '@/components/note/NoteHeader.vue'
 import { useNoteDraft } from '@/composables/useNoteDraft'
 import { useNoteWindow } from '@/composables/useNoteWindow'
@@ -16,13 +17,15 @@ const store = useNoteStore()
 const { note, toggleAlwaysOnTop, toggleCollapsed, setColor } = useNoteWindow(props.id)
 const { title, content, init, flush } = useNoteDraft(props.id, CONTENT_SAVE_DELAY)
 
-const contentEl = useTemplateRef<HTMLTextAreaElement>('contentEl')
+const editorRef = useTemplateRef<InstanceType<typeof NoteEditor>>('editorRef')
+
+/** The editor reads its content once, so it is only created after the draft is initialised. */
+const ready = ref(false)
+/** A brand-new (empty) note is ready for typing straight away. */
+const autofocus = ref(false)
 
 function focusContent() {
-  const el = contentEl.value
-  if (!el) return
-  el.focus()
-  el.setSelectionRange(el.value.length, el.value.length)
+  editorRef.value?.focusEnd()
 }
 
 /** Save pending typing before the window loses focus or goes away. */
@@ -35,13 +38,9 @@ onMounted(async () => {
     return
   }
   init(loaded)
+  autofocus.value = !loaded.collapsed && !loaded.title && !loaded.content
+  ready.value = true
   window.addEventListener('blur', flushOnBlur)
-
-  // A brand-new (empty) note is ready for typing straight away.
-  if (!loaded.collapsed && !loaded.title && !loaded.content) {
-    await nextTick()
-    focusContent()
-  }
 })
 
 onBeforeUnmount(() => window.removeEventListener('blur', flushOnBlur))
@@ -84,13 +83,13 @@ async function remove() {
       @archive="archive"
       @delete="remove"
     />
-    <textarea
+    <NoteEditor
+      v-if="ready"
       v-show="!note.collapsed"
-      ref="contentEl"
-      v-model="content"
-      placeholder="寫點什麼…"
-      spellcheck="false"
-      class="min-h-0 flex-1 resize-none bg-transparent px-3 py-2 text-[14px] leading-relaxed outline-none placeholder:text-note-ink/35"
+      ref="editorRef"
+      :initial-content="content"
+      :autofocus="autofocus"
+      @change="content = $event"
     />
   </div>
 </template>

@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 
-import type { Note, NoteUpdate } from '@/models/note'
+import type { Note, NoteUpdate, TransferResult } from '@/models/note'
 
 /** Event names emitted by `src-tauri/src/events.rs`. */
 const NOTE_CHANGED = 'notes:changed'
@@ -46,6 +46,16 @@ export const noteRepository = {
 
   deleteNotePermanently(id: string): Promise<void> {
     return invoke('delete_note_permanently', { id })
+  },
+
+  /** Opens a save dialog; resolves to null when cancelled. */
+  exportNotes(): Promise<TransferResult | null> {
+    return invoke('export_notes')
+  },
+
+  /** Opens a file picker; notes whose id already exists are skipped. Resolves to null when cancelled. */
+  importNotes(): Promise<TransferResult | null> {
+    return invoke('import_notes')
   },
 
   /** Every window receives changes made from any window, the tray or the shortcut. */

@@ -20,6 +20,12 @@ pub fn run() {
             let _ = window::show_main_window(app);
         }))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![lifecycle::AUTOSTART_ARG]),
+        ))
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(AppState::default())
         .setup(|app| {
             lifecycle::startup(app.handle())?;
@@ -38,8 +44,15 @@ pub fn run() {
             commands::notes::delete_note_permanently,
             commands::windows::open_note_window,
             commands::windows::close_note_window,
+            commands::windows::show_all_notes,
             commands::windows::show_main_window,
             commands::app::get_shortcut_status,
+            commands::app::get_autostart,
+            commands::app::set_autostart,
+            commands::app::export_notes,
+            commands::app::import_notes,
+            commands::app::open_backup_folder,
+            commands::app::open_external,
         ])
         .build(tauri::generate_context!())
         .expect("error while building PinNote");

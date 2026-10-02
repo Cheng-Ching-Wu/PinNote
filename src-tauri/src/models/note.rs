@@ -62,7 +62,7 @@ impl NoteColor {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Note {
     pub id: String,
@@ -82,6 +82,7 @@ pub struct Note {
 
     pub always_on_top: bool,
     pub collapsed: bool,
+    #[serde(default)]
     pub is_open: bool,
 
     pub status: NoteStatus,

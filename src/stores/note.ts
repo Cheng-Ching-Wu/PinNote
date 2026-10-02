@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import type { Note, NoteUpdate } from '@/models/note'
 import { noteRepository } from '@/repositories/noteRepository'
 import { windowService } from '@/services/windowService'
+import { markdownToPlainText } from '@/utils/markdown'
 
 const byUpdatedDesc = (a: Note, b: Note) => b.updatedAt.localeCompare(a.updatedAt)
 const byDeletedDesc = (a: Note, b: Note) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? '')
@@ -11,13 +12,15 @@ const byDeletedDesc = (a: Note, b: Note) => (b.deletedAt ?? '').localeCompare(a.
 export function matchesQuery(note: Note, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
-  return note.title.toLowerCase().includes(q) || note.content.toLowerCase().includes(q)
+  return note.title.toLowerCase().includes(q) || markdownToPlainText(note.content).toLowerCase().includes(q)
 }
 
 export const useNoteStore = defineStore('note', () => {
   const notes = ref<Note[]>([])
   const loaded = ref(false)
   const lastError = ref<string | null>(null)
+  /** Short success message for the manager window (export / import / show all). */
+  const notice = ref<string | null>(null)
 
   const activeNotes = computed(() => notes.value.filter((n) => n.status === 'active').sort(byUpdatedDesc))
   const archivedNotes = computed(() => notes.value.filter((n) => n.status === 'archived').sort(byUpdatedDesc))
@@ -110,6 +113,25 @@ export const useNoteStore = defineStore('note', () => {
     await run('關閉便籤失敗', () => windowService.closeNoteWindow(id))
   }
 
+  async function showAllNotes() {
+    const shown = await run('顯示便籤失敗', () => windowService.showAllNotes())
+    if (shown !== undefined) notice.value = shown > 0 ? `已顯示 ${shown} 張便籤` : '沒有可顯示的便籤'
+  }
+
+  async function exportNotes() {
+    const result = await run('匯出失敗', () => noteRepository.exportNotes())
+    if (result) notice.value = `已匯出 ${result.count} 張便籤到 ${result.path}`
+  }
+
+  async function importNotes() {
+    const result = await run('匯入失敗', () => noteRepository.importNotes())
+    if (!result) return
+    // Imported notes also arrive via `notes:changed`; reload to be safe for large files.
+    await loadNotes()
+    notice.value =
+      `已匯入 ${result.count} 張便籤` + (result.skipped > 0 ? `，略過 ${result.skipped} 張已存在的便籤` : '')
+  }
+
   let unsubscribe: (() => void) | null = null
 
   /** Keeps this window's copy in sync with changes made anywhere else. */
@@ -127,6 +149,7 @@ export const useNoteStore = defineStore('note', () => {
     notes,
     loaded,
     lastError,
+    notice,
     activeNotes,
     archivedNotes,
     deletedNotes,
@@ -142,6 +165,9 @@ export const useNoteStore = defineStore('note', () => {
     deleteNotePermanently,
     openNoteWindow,
     closeNoteWindow,
+    showAllNotes,
+    exportNotes,
+    importNotes,
     startSync,
     stopSync,
   }

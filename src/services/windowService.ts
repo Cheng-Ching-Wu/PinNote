@@ -18,6 +18,11 @@ export const windowService = {
     return invoke('close_note_window', { id })
   },
 
+  /** Reopens every active note on the desktop; resolves to the number shown. */
+  showAllNotes(): Promise<number> {
+    return invoke('show_all_notes')
+  },
+
   showMainWindow(): Promise<void> {
     return invoke('show_main_window')
   },

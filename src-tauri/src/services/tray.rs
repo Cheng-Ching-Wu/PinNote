@@ -6,12 +6,14 @@ use crate::services::{lifecycle, notes, window};
 
 const MENU_NEW_NOTE: &str = "new_note";
 const MENU_OPEN_MAIN: &str = "open_main";
+const MENU_SHOW_ALL: &str = "show_all";
 const MENU_QUIT: &str = "quit";
 
 pub fn init(app: &AppHandle) -> tauri::Result<()> {
     let header = MenuItem::with_id(app, "header", "PinNote", false, None::<&str>)?;
     let new_note = MenuItem::with_id(app, MENU_NEW_NOTE, "新增便籤", true, None::<&str>)?;
     let open_main = MenuItem::with_id(app, MENU_OPEN_MAIN, "開啟便籤管理", true, None::<&str>)?;
+    let show_all = MenuItem::with_id(app, MENU_SHOW_ALL, "顯示全部便籤", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, MENU_QUIT, "結束", true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
@@ -20,6 +22,7 @@ pub fn init(app: &AppHandle) -> tauri::Result<()> {
             &PredefinedMenuItem::separator(app)?,
             &new_note,
             &open_main,
+            &show_all,
             &PredefinedMenuItem::separator(app)?,
             &quit,
         ],
@@ -38,6 +41,11 @@ pub fn init(app: &AppHandle) -> tauri::Result<()> {
             MENU_OPEN_MAIN => {
                 if let Err(err) = window::show_main_window(app) {
                     eprintln!("[pinnote] tray: failed to show main window: {err}");
+                }
+            }
+            MENU_SHOW_ALL => {
+                if let Err(err) = notes::show_all(app) {
+                    eprintln!("[pinnote] tray: failed to show notes: {err}");
                 }
             }
             MENU_QUIT => lifecycle::quit(app),

@@ -47,6 +47,14 @@ export type NoteUpdate = Partial<
   }
 >
 
+export interface TransferResult {
+  path: string
+  /** Notes written (export) or added (import). */
+  count: number
+  /** Import only: notes skipped because they already exist. */
+  skipped: number
+}
+
 export interface WindowGeometry {
   x: number
   y: number

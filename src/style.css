@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './styles/note-colors.css';
+@import './styles/note-editor.css';
 
 @custom-variant dark (&:is(.dark *));
 

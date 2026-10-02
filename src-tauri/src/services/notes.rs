@@ -58,6 +58,23 @@ pub fn set_open(app: &AppHandle, id: &str, is_open: bool) -> AppResult<Note> {
     Ok(note)
 }
 
+/// Puts every active note back on the desktop. Returns how many notes are shown.
+pub fn show_all(app: &AppHandle) -> AppResult<usize> {
+    let active: Vec<Note> = list(app)?
+        .into_iter()
+        .filter(|note| note.status == NoteStatus::Active)
+        .collect();
+    for note in &active {
+        let note = if note.is_open {
+            note.clone()
+        } else {
+            set_open(app, &note.id, true)?
+        };
+        window::open_note_window(app, &note, false)?;
+    }
+    Ok(active.len())
+}
+
 pub fn delete_permanently(app: &AppHandle, id: &str) -> AppResult<()> {
     db(app).with_conn(|conn| repo::delete(conn, id))?;
     events::note_removed(app, id);

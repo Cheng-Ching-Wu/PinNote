@@ -11,6 +11,9 @@ pub enum AppError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 
+    #[error("invalid file: {0}")]
+    Json(#[from] serde_json::Error),
+
     #[error("note not found: {0}")]
     NoteNotFound(String),
 
