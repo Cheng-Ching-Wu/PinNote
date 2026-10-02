@@ -3,6 +3,8 @@ import { type Component, useTemplateRef } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
 import {
   Bold,
+  ChevronLeft,
+  ChevronRight,
   Code,
   Heading1,
   Heading2,
@@ -19,6 +21,7 @@ import {
 } from 'lucide-vue-next'
 
 import NoteTableMenu from '@/components/note/NoteTableMenu.vue'
+import { useHorizontalOverflow } from '@/composables/useHorizontalOverflow'
 import { toggleMergedCodeBlock } from '@/lib/noteEditor'
 import { cn } from '@/lib/utils'
 import { IMAGE_MIME_TYPES } from '@/services/imageService'
@@ -32,7 +35,12 @@ const buttonClass =
 const activeClass = 'bg-note-ink/15 text-note-ink'
 const separatorClass = 'mx-0.5 h-3.5 w-px shrink-0 bg-note-ink/15'
 
+const arrowClass =
+  'inline-flex h-full w-5 shrink-0 items-center justify-center text-note-ink/60 outline-none hover:bg-note-ink/10 hover:text-note-ink'
+
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
+const scroller = useTemplateRef<HTMLDivElement>('scroller')
+const { canScrollLeft, canScrollRight, scrollByPage } = useHorizontalOverflow(scroller)
 
 function onFilesPicked(event: Event) {
   const input = event.target as HTMLInputElement
@@ -73,28 +81,52 @@ const items: (ToolbarItem | null)[] = [
 
 <template>
   <!-- mousedown.prevent keeps the text selection while clicking a button. -->
-  <div
-    class="flex h-7 shrink-0 items-center gap-px overflow-x-auto border-t border-note-border/50 px-1 [scrollbar-width:none]"
-    @mousedown.prevent
-  >
-    <template v-for="(item, index) in items" :key="index">
-      <span v-if="item === null" :class="separatorClass" />
-      <button
-        v-else
-        type="button"
-        :title="item.title"
-        :class="cn(buttonClass, item.isActive() && activeClass)"
-        @click="item.run()"
-      >
-        <component :is="item.icon" class="size-3.5" />
-      </button>
-    </template>
-
-    <span :class="separatorClass" />
-    <NoteTableMenu :editor="editor" :button-class="buttonClass" :active-class="activeClass" />
-    <button type="button" :class="buttonClass" title="插入圖片（也可直接貼上或拖曳圖片）" @click="fileInput?.click()">
-      <ImagePlus class="size-3.5" />
+  <div class="flex h-7 shrink-0 items-center border-t border-note-border/50" @mousedown.prevent>
+    <!-- Arrows only appear while buttons are cut off (e.g. the note was resized narrower). -->
+    <button
+      v-if="canScrollLeft"
+      type="button"
+      :class="arrowClass"
+      title="向左捲動工具列"
+      @click="scrollByPage(-1)"
+    >
+      <ChevronLeft class="size-3.5" />
     </button>
+
+    <div
+      ref="scroller"
+      class="flex h-full min-w-0 flex-1 items-center gap-px overflow-x-auto px-1 [scrollbar-width:none]"
+    >
+      <template v-for="(item, index) in items" :key="index">
+        <span v-if="item === null" :class="separatorClass" />
+        <button
+          v-else
+          type="button"
+          :title="item.title"
+          :class="cn(buttonClass, item.isActive() && activeClass)"
+          @click="item.run()"
+        >
+          <component :is="item.icon" class="size-3.5" />
+        </button>
+      </template>
+
+      <span :class="separatorClass" />
+      <NoteTableMenu :editor="editor" :button-class="buttonClass" :active-class="activeClass" />
+      <button type="button" :class="buttonClass" title="插入圖片（也可直接貼上或拖曳圖片）" @click="fileInput?.click()">
+        <ImagePlus class="size-3.5" />
+      </button>
+    </div>
+
+    <button
+      v-if="canScrollRight"
+      type="button"
+      :class="arrowClass"
+      title="向右捲動工具列"
+      @click="scrollByPage(1)"
+    >
+      <ChevronRight class="size-3.5" />
+    </button>
+
     <input
       ref="fileInput"
       type="file"
