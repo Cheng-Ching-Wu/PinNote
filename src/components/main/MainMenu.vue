@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, Download, EyeOff, FolderOpen, Keyboard, Layers, Settings, Upload } from 'lucide-vue-next'
+import { Check, Download, EyeOff, FolderOpen, ImageOff, Keyboard, Layers, Settings, Upload } from 'lucide-vue-next'
 
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ const emit = defineEmits<{
   'toggle-autostart': []
   'toggle-translucent': []
   shortcuts: []
+  'cleanup-images': []
   export: []
   import: []
   'open-backups': []
@@ -76,6 +77,10 @@ function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent
       <DropdownMenuItem @select="emit('open-backups')">
         <FolderOpen />
         開啟自動備份資料夾
+      </DropdownMenuItem>
+      <DropdownMenuItem @select="emit('cleanup-images')">
+        <ImageOff />
+        清理未使用的圖片
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

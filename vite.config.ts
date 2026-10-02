@@ -16,6 +16,12 @@ export default defineConfig(() => ({
     },
   },
 
+  build: {
+    // The note-window chunk bundles the editor (Tiptap / ProseMirror, ~0.5 MB).
+    // It's loaded from disk by a desktop app, so the web-oriented 500 kB warning doesn't apply.
+    chunkSizeWarningLimit: 1000,
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   // 1. prevent Vite from obscuring rust errors
   clearScreen: false,

@@ -1,19 +1,54 @@
 import type { Editor, Extensions } from '@tiptap/core'
+import FileHandler from '@tiptap/extension-file-handler'
 import Highlight from '@tiptap/extension-highlight'
+import Image from '@tiptap/extension-image'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
+import { TableKit } from '@tiptap/extension-table'
 import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
+
+export interface NoteEditorOptions {
+  placeholder?: string
+  /** Maps a stored `src` (e.g. `images/x.png`) to a URL the webview can load. */
+  resolveImageSrc?: (src: string | null) => string | null
+  /** Image files pasted or dropped into the editor (`pos` is set for drops). */
+  onImageFiles?: (editor: Editor, files: File[], pos?: number) => void
+  imageMimeTypes?: string[]
+}
+
+/**
+ * Image node whose Markdown `src` stays as written (`images/<file>` or a web URL)
+ * while the rendered `<img>` gets a loadable URL. `data-src` keeps the original
+ * so copy / paste inside the editor round-trips correctly.
+ */
+function createNoteImage(resolve: (src: string | null) => string | null) {
+  return Image.extend({
+    addAttributes() {
+      return {
+        ...this.parent?.(),
+        src: {
+          default: null,
+          parseHTML: (element: HTMLElement) => element.getAttribute('data-src') ?? element.getAttribute('src'),
+          renderHTML: (attributes: { src?: string | null }) => ({
+            src: resolve(attributes.src ?? null),
+            'data-src': attributes.src,
+          }),
+        },
+      }
+    },
+  }).configure({ inline: true, allowBase64: false })
+}
 
 /**
  * Note content is edited WYSIWYG but stored as Markdown text in `notes.content`,
  * so search, JSON export and older plain-text notes keep working unchanged.
  *
  * Only styles Markdown can represent are offered (underline is stored as `++text++`,
- * highlight as `==text==`).
+ * highlight as `==text==`). Tables are GFM tables; images are `![alt](src)`.
  */
-export function createNoteExtensions(placeholder: string): Extensions {
-  return [
+export function createNoteExtensions(options: NoteEditorOptions = {}): Extensions {
+  const extensions: Extensions = [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
       // Links open in the system browser via Ctrl+click (see NoteEditor.vue);
@@ -23,13 +58,28 @@ export function createNoteExtensions(placeholder: string): Extensions {
     TaskList,
     TaskItem.configure({ nested: true }),
     Highlight,
-    Placeholder.configure({ placeholder }),
+    // Column widths can't be stored in Markdown, so no resizing.
+    TableKit.configure({ table: { resizable: false } }),
+    createNoteImage(options.resolveImageSrc ?? ((src) => src)),
+    Placeholder.configure({ placeholder: options.placeholder ?? '' }),
     Markdown.configure({
       // `breaks`: single newlines are line breaks, so plain-text notes written
       // before Markdown support keep their line structure.
       markedOptions: { gfm: true, breaks: true },
     }),
   ]
+
+  const onImageFiles = options.onImageFiles
+  if (onImageFiles) {
+    extensions.push(
+      FileHandler.configure({
+        allowedMimeTypes: options.imageMimeTypes,
+        onPaste: (editor, files) => onImageFiles(editor, files),
+        onDrop: (editor, files, pos) => onImageFiles(editor, files, pos),
+      }),
+    )
+  }
+  return extensions
 }
 
 /**

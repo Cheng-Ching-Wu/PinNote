@@ -92,6 +92,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             @toggle-hidden="store.toggleNotesHidden()"
             @toggle-autostart="settings.setAutostart(!settings.autostart)"
             @shortcuts="shortcutDialogOpen = true"
+            @cleanup-images="store.cleanupImages()"
             @toggle-translucent="settings.updateSettings({ pinnedTranslucent: !settings.settings.pinnedTranslucent })"
             @export="store.exportNotes()"
             @import="store.importNotes()"

@@ -89,6 +89,9 @@ pub fn open_note_window(app: &AppHandle, note: &Note, focus: bool) -> AppResult<
         // Transparent so pinned notes can fade (CSS opacity) to show what's
         // behind them; this also means no white flash while the page loads.
         .transparent(true)
+        // Let the webview receive files dropped from Explorer (images into the note)
+        // instead of Tauri's native drag-drop events.
+        .disable_drag_drop_handler()
         .focused(focus);
     builder = match saved_position {
         // Approximate placement up front so the window doesn't flash elsewhere first.

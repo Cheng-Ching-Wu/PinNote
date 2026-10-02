@@ -53,6 +53,8 @@ export interface TransferResult {
   count: number
   /** Import only: notes skipped because they already exist. */
   skipped: number
+  /** Images written (export) or added (import). */
+  images: number
 }
 
 export interface WindowGeometry {

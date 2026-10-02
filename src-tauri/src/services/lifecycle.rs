@@ -4,7 +4,7 @@ use tauri::{AppHandle, Manager, Window, WindowEvent};
 
 use crate::database::{backup, note_repository as repo, Database};
 use crate::error::AppResult;
-use crate::services::{notes, shortcut, transfer, tray, window};
+use crate::services::{images, notes, shortcut, transfer, tray, window};
 use crate::state::AppState;
 
 const DB_FILE: &str = "pinnote.db";
@@ -12,18 +12,31 @@ const DB_FILE: &str = "pinnote.db";
 /// Passed by the OS login item (see `tauri_plugin_autostart::init` in lib.rs).
 pub const AUTOSTART_ARG: &str = "--autostart";
 
-/// 初始化 → 每日備份 → migrations → 載入 active notes → Main Window → Note Windows → Tray → Global Shortcut
+/// 初始化 → 每日備份（資料庫 + 圖片）→ migrations → 清理孤兒圖片 → 載入 active notes
+/// → Main Window → Note Windows → Tray → Global Shortcut
 pub fn startup(app: &AppHandle) -> AppResult<()> {
     let db_path = app.path().app_data_dir()?.join(DB_FILE);
+    let backup_dir = transfer::backup_dir(app)?;
     // A failed backup must not keep the user from their notes.
-    if let Err(err) =
-        backup::daily_backup(&db_path, &transfer::backup_dir(app)?, backup::KEEP_BACKUPS)
-    {
+    if let Err(err) = backup::daily_backup(&db_path, &backup_dir, backup::KEEP_BACKUPS) {
         eprintln!("[pinnote] daily backup failed: {err}");
     }
+    if let Err(err) = backup::sync_images(&images::images_dir(app)?, &backup_dir) {
+        eprintln!("[pinnote] image backup failed: {err}");
+    }
+
     let db = Database::open(&db_path)?;
     let open_notes = db.with_conn(|conn| repo::list_open(conn))?;
     app.manage(db);
+
+    // After the backup above, so anything removed here is still in the backup.
+    match images::cleanup(app, images::ORPHAN_GRACE) {
+        Ok(result) if result.count > 0 => {
+            eprintln!("[pinnote] removed {} unused image(s)", result.count)
+        }
+        Ok(_) => {}
+        Err(err) => eprintln!("[pinnote] image cleanup failed: {err}"),
+    }
 
     // At login only the desktop notes come back; the manager stays in the tray.
     let launched_at_login = std::env::args().any(|arg| arg == AUTOSTART_ARG);

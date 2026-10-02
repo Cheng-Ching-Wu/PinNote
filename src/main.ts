@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import { router } from './router'
+import { imageService } from './services/imageService'
 import { windowService } from './services/windowService'
 import { useNoteStore } from './stores/note'
 import { useSettingsStore } from './stores/settings'
@@ -19,7 +20,7 @@ async function bootstrap() {
   if (noteId) document.documentElement.classList.add('note-window')
   await router.replace(noteId ? { name: 'note', params: { id: noteId } } : { name: 'main' })
 
-  await Promise.all([useNoteStore().startSync(), useSettingsStore().startSync()])
+  await Promise.all([useNoteStore().startSync(), useSettingsStore().startSync(), imageService.init()])
   await router.isReady()
   app.mount('#app')
 }

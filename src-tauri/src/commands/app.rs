@@ -5,7 +5,7 @@ use tauri_plugin_opener::OpenerExt;
 use crate::error::{AppError, AppResult};
 use crate::models::{AppSettings, AppSettingsPatch};
 use crate::services::transfer::{self, TransferResult};
-use crate::services::{settings, shortcut};
+use crate::services::{images, settings, shortcut};
 use crate::state::ShortcutStatus;
 
 #[tauri::command]
@@ -87,6 +87,35 @@ pub fn open_external(app: AppHandle, url: String) -> AppResult<()> {
     app.opener()
         .open_url(url, None::<&str>)
         .map_err(|err| AppError::Internal(err.to_string()))
+}
+
+/// Absolute path of the image folder; the frontend turns `images/<file>`
+/// into an asset-protocol URL with it.
+#[tauri::command]
+pub fn get_images_dir(app: AppHandle) -> AppResult<String> {
+    Ok(images::images_dir(&app)?.to_string_lossy().into_owned())
+}
+
+/// Raw binary body (no JSON array encoding); the extension comes in the
+/// `x-image-ext` header. Returns the Markdown path, e.g. `images/<uuid>.png`.
+#[tauri::command]
+pub fn save_image(app: AppHandle, request: tauri::ipc::Request<'_>) -> AppResult<String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(AppError::Internal("expected raw image bytes".into()));
+    };
+    let extension = request
+        .headers()
+        .get("x-image-ext")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("png");
+    images::save(&app, bytes, extension)
+}
+
+/// Settings → 清理未使用的圖片. Same grace period as the automatic cleanup,
+/// so images just pasted (not saved into a note yet) are never removed.
+#[tauri::command]
+pub fn cleanup_images(app: AppHandle) -> AppResult<images::CleanupResult> {
+    images::cleanup(&app, images::ORPHAN_GRACE)
 }
 
 #[tauri::command]

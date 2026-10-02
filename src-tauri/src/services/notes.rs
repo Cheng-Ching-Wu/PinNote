@@ -7,9 +7,10 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use crate::database::{note_repository as repo, Database};
 use crate::error::AppResult;
 use crate::events;
+use crate::image_refs;
 use crate::models::note::{DEFAULT_HEIGHT, DEFAULT_WIDTH};
 use crate::models::{Note, NoteStatus, NoteUpdate};
-use crate::services::window;
+use crate::services::{images, window};
 
 fn db(app: &AppHandle) -> tauri::State<'_, Database> {
     app.state::<Database>()
@@ -100,9 +101,23 @@ pub fn show_all(app: &AppHandle) -> AppResult<usize> {
     Ok(active.len())
 }
 
+/// Deletes the note and the images only it was using. Images shared with other
+/// notes (in any status, trash included) are kept.
 pub fn delete_permanently(app: &AppHandle, id: &str) -> AppResult<()> {
+    let note = get(app, id)?;
     db(app).with_conn(|conn| repo::delete(conn, id))?;
     events::note_removed(app, id);
+
+    let own_images = image_refs::referenced_files(&note.content);
+    if !own_images.is_empty() {
+        // The note itself is already gone, so this is "still used elsewhere".
+        let result = images::referenced_by_notes(app).and_then(|still_used| {
+            images::delete_if_unreferenced(&images::images_dir(app)?, &own_images, &still_used)
+        });
+        if let Err(err) = result {
+            eprintln!("[pinnote] failed to remove images of note {id}: {err}");
+        }
+    }
     Ok(())
 }
 

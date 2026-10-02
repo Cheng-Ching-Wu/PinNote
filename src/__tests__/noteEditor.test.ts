@@ -8,7 +8,7 @@ let editor: Editor | undefined
 
 function load(markdown: string) {
   editor = new Editor({
-    extensions: createNoteExtensions(''),
+    extensions: createNoteExtensions(),
     content: markdown,
     contentType: 'markdown',
   })

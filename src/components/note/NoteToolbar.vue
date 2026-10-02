@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Component } from 'vue'
+import { type Component, useTemplateRef } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
 import {
   Bold,
@@ -7,6 +7,7 @@ import {
   Heading1,
   Heading2,
   Highlighter,
+  ImagePlus,
   Italic,
   List,
   ListChecks,
@@ -17,10 +18,28 @@ import {
   Underline,
 } from 'lucide-vue-next'
 
+import NoteTableMenu from '@/components/note/NoteTableMenu.vue'
 import { toggleMergedCodeBlock } from '@/lib/noteEditor'
 import { cn } from '@/lib/utils'
+import { IMAGE_MIME_TYPES } from '@/services/imageService'
 
 const props = defineProps<{ editor: Editor }>()
+
+const emit = defineEmits<{ 'insert-images': [files: File[]] }>()
+
+const buttonClass =
+  'inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-note-ink/60 outline-none hover:bg-note-ink/10 hover:text-note-ink data-[state=open]:bg-note-ink/15'
+const activeClass = 'bg-note-ink/15 text-note-ink'
+const separatorClass = 'mx-0.5 h-3.5 w-px shrink-0 bg-note-ink/15'
+
+const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
+
+function onFilesPicked(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = '' // allow picking the same file again
+  if (files.length > 0) emit('insert-images', files)
+}
 
 interface ToolbarItem {
   title: string
@@ -59,21 +78,30 @@ const items: (ToolbarItem | null)[] = [
     @mousedown.prevent
   >
     <template v-for="(item, index) in items" :key="index">
-      <span v-if="item === null" class="mx-0.5 h-3.5 w-px shrink-0 bg-note-ink/15" />
+      <span v-if="item === null" :class="separatorClass" />
       <button
         v-else
         type="button"
         :title="item.title"
-        :class="
-          cn(
-            'inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-note-ink/60 outline-none hover:bg-note-ink/10 hover:text-note-ink',
-            item.isActive() && 'bg-note-ink/15 text-note-ink',
-          )
-        "
+        :class="cn(buttonClass, item.isActive() && activeClass)"
         @click="item.run()"
       >
         <component :is="item.icon" class="size-3.5" />
       </button>
     </template>
+
+    <span :class="separatorClass" />
+    <NoteTableMenu :editor="editor" :button-class="buttonClass" :active-class="activeClass" />
+    <button type="button" :class="buttonClass" title="插入圖片（也可直接貼上或拖曳圖片）" @click="fileInput?.click()">
+      <ImagePlus class="size-3.5" />
+    </button>
+    <input
+      ref="fileInput"
+      type="file"
+      :accept="IMAGE_MIME_TYPES.join(',')"
+      multiple
+      class="hidden"
+      @change="onFilesPicked"
+    />
   </div>
 </template>

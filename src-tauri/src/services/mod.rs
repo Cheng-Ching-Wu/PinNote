@@ -1,3 +1,4 @@
+pub mod images;
 pub mod lifecycle;
 pub mod notes;
 pub mod settings;

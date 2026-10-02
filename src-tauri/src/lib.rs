@@ -2,6 +2,7 @@ mod commands;
 mod database;
 mod error;
 mod events;
+mod image_refs;
 mod models;
 mod services;
 mod state;
@@ -59,6 +60,9 @@ pub fn run() {
             commands::app::import_notes,
             commands::app::open_backup_folder,
             commands::app::open_external,
+            commands::app::get_images_dir,
+            commands::app::save_image,
+            commands::app::cleanup_images,
         ])
         .build(tauri::generate_context!())
         .expect("error while building PinNote");

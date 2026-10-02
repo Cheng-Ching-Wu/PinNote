@@ -124,6 +124,68 @@
   border-top: 1px solid var(--note-border);
 }
 
+.note-editor img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 3px;
+  vertical-align: bottom;
+}
+
+.note-editor img.ProseMirror-selectednode {
+  outline: 2px solid color-mix(in srgb, var(--note-ink) 45%, transparent);
+}
+
+/* Tables scroll sideways instead of squeezing in narrow notes. */
+.note-editor .tableWrapper {
+  overflow-x: auto;
+}
+
+.note-editor table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-size: 0.93em;
+  line-height: 1.45;
+}
+
+.note-editor th,
+.note-editor td {
+  position: relative;
+  min-width: 3em;
+  border: 1px solid var(--note-border);
+  padding: 0.25em 0.5em;
+  vertical-align: top;
+  text-align: left;
+}
+
+.note-editor th {
+  background: color-mix(in srgb, var(--note-ink) 7%, transparent);
+  font-weight: 600;
+}
+
+.note-editor th[align='center'],
+.note-editor td[align='center'] {
+  text-align: center;
+}
+
+.note-editor th[align='right'],
+.note-editor td[align='right'] {
+  text-align: right;
+}
+
+.note-editor th > p,
+.note-editor td > p {
+  margin: 0;
+}
+
+.note-editor .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--note-ink) 12%, transparent);
+}
+
 .note-editor p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;

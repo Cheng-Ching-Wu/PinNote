@@ -3,7 +3,9 @@ import { computed, ref } from 'vue'
 
 import type { Note, NoteUpdate } from '@/models/note'
 import { noteRepository } from '@/repositories/noteRepository'
+import { imageService } from '@/services/imageService'
 import { windowService } from '@/services/windowService'
+import { formatBytes } from '@/utils/format'
 import { markdownToPlainText } from '@/utils/markdown'
 
 const byUpdatedDesc = (a: Note, b: Note) => b.updatedAt.localeCompare(a.updatedAt)
@@ -125,7 +127,7 @@ export const useNoteStore = defineStore('note', () => {
 
   async function exportNotes() {
     const result = await run('匯出失敗', () => noteRepository.exportNotes())
-    if (result) notice.value = `已匯出 ${result.count} 張便籤到 ${result.path}`
+    if (result) notice.value = `已匯出 ${result.count} 張便籤、${result.images} 張圖片到 ${result.path}`
   }
 
   async function importNotes() {
@@ -134,7 +136,17 @@ export const useNoteStore = defineStore('note', () => {
     // Imported notes also arrive via `notes:changed`; reload to be safe for large files.
     await loadNotes()
     notice.value =
-      `已匯入 ${result.count} 張便籤` + (result.skipped > 0 ? `，略過 ${result.skipped} 張已存在的便籤` : '')
+      `已匯入 ${result.count} 張便籤、${result.images} 張圖片` +
+      (result.skipped > 0 ? `，略過 ${result.skipped} 張已存在的便籤` : '')
+  }
+
+  async function cleanupImages() {
+    const result = await run('清理圖片失敗', () => imageService.cleanupUnused())
+    if (!result) return
+    notice.value =
+      result.count > 0
+        ? `已刪除 ${result.count} 張未使用的圖片，釋放 ${formatBytes(result.bytes)}`
+        : '沒有可清理的圖片（24 小時內新增的圖片會保留）'
   }
 
   let unsubscribe: (() => void) | null = null
@@ -174,6 +186,7 @@ export const useNoteStore = defineStore('note', () => {
     toggleNotesHidden,
     exportNotes,
     importNotes,
+    cleanupImages,
     startSync,
     stopSync,
   }
