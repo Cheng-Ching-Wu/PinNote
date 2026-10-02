@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE873"/>
+      <stop offset="1" stop-color="#FCD94B"/>
+    </linearGradient>
+  </defs>
+  <!-- note body with a folded corner -->
+  <path d="M176 140h672a36 36 0 0 1 36 36v468L644 884H176a36 36 0 0 1-36-36V176a36 36 0 0 1 36-36z" fill="url(#paper)"/>
+  <path d="M884 644H680a36 36 0 0 0-36 36v204z" fill="#E2B92C"/>
+  <!-- header band -->
+  <path d="M176 140h672a36 36 0 0 1 36 36v74H140v-74a36 36 0 0 1 36-36z" fill="#F2C93A"/>
+  <!-- text lines -->
+  <rect x="236" y="360" width="480" height="44" rx="22" fill="#B8901A" opacity=".55"/>
+  <rect x="236" y="470" width="400" height="44" rx="22" fill="#B8901A" opacity=".55"/>
+  <rect x="236" y="580" width="300" height="44" rx="22" fill="#B8901A" opacity=".55"/>
+  <!-- pin -->
+  <circle cx="512" cy="150" r="78" fill="#E5484D"/>
+  <circle cx="488" cy="126" r="22" fill="#FF8A8D"/>
+</svg>

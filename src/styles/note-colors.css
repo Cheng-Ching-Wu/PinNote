@@ -1,0 +1,38 @@
+/*
+ * Note palette. `--note-body` must match `note_background()` in
+ * src-tauri/src/services/window.rs (initial webview background).
+ */
+.note-yellow {
+  --note-body: #fff7bf;
+  --note-header: #fcec8f;
+  --note-border: #e9d566;
+  --note-ink: #3d3410;
+}
+
+.note-blue {
+  --note-body: #dcecfc;
+  --note-header: #c2dcf7;
+  --note-border: #9cc3ec;
+  --note-ink: #17304a;
+}
+
+.note-green {
+  --note-body: #def5d8;
+  --note-header: #c3eabb;
+  --note-border: #9fd694;
+  --note-ink: #1d3a18;
+}
+
+.note-pink {
+  --note-body: #fce1ec;
+  --note-header: #f8c8dc;
+  --note-border: #eea6c4;
+  --note-ink: #4a1a2e;
+}
+
+.note-gray {
+  --note-body: #eeeeec;
+  --note-header: #dededb;
+  --note-border: #c6c6c2;
+  --note-ink: #2b2b29;
+}
