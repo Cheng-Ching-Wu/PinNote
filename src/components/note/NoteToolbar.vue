@@ -35,8 +35,9 @@ const buttonClass =
 const activeClass = 'bg-note-ink/15 text-note-ink'
 const separatorClass = 'mx-0.5 h-3.5 w-px shrink-0 bg-note-ink/15'
 
+// Rounded buttons in the note's own palette, floating over the scroller edges; buttons slide underneath them.
 const arrowClass =
-  'inline-flex h-full w-5 shrink-0 items-center justify-center text-note-ink/60 outline-none hover:bg-note-ink/10 hover:text-note-ink'
+  'absolute top-1/2 z-10 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-md border border-note-border bg-note-header text-note-ink outline-none transition-colors hover:bg-note-border'
 
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 const scroller = useTemplateRef<HTMLDivElement>('scroller')
@@ -90,7 +91,7 @@ const items: (ToolbarItem | null)[] = [
 <template>
   <!-- mousedown.prevent keeps the text selection while clicking a button. -->
   <div
-    class="flex h-7 shrink-0 items-center border-t border-note-border/50"
+    class="relative flex h-7 shrink-0 items-center border-t border-note-border/50"
     @mousedown.prevent
     @pointerenter="barHovered = true"
     @pointerleave="onBarLeave"
@@ -102,13 +103,13 @@ const items: (ToolbarItem | null)[] = [
     <button
       v-if="barHovered && canScrollLeft"
       type="button"
-      :class="arrowClass"
+      :class="cn(arrowClass, 'left-1')"
       title="向左捲動工具列"
       @pointerenter="startAutoScroll(-1)"
       @pointerleave="stopAutoScroll"
       @click="scrollByPage(-1)"
     >
-      <ChevronLeft class="size-3.5" />
+      <ChevronLeft class="size-3" :stroke-width="3" />
     </button>
 
     <div
@@ -138,13 +139,13 @@ const items: (ToolbarItem | null)[] = [
     <button
       v-if="barHovered && canScrollRight"
       type="button"
-      :class="arrowClass"
+      :class="cn(arrowClass, 'right-1')"
       title="向右捲動工具列"
       @pointerenter="startAutoScroll(1)"
       @pointerleave="stopAutoScroll"
       @click="scrollByPage(1)"
     >
-      <ChevronRight class="size-3.5" />
+      <ChevronRight class="size-3" :stroke-width="3" />
     </button>
 
     <input
