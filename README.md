@@ -2,6 +2,14 @@
 
 輕量的 Windows 桌面便籤。每張便籤都是獨立的 Tauri 視窗，內容、位置、尺寸、顏色、置頂與收合狀態都會自動存進 SQLite，重開後原樣還原。
 
+## 下載與安裝
+
+到 [Releases](https://github.com/Cheng-Ching-Wu/Sticky/releases) 下載最新版的 `PinNote_x.y.z_x64-setup.exe`（或 `.msi`）安裝，支援 Windows 10 / 11（需要 WebView2，Windows 11 已內建）。
+
+主要功能：多張獨立便籤視窗、置頂與收合、Rich text（清單、表格、圖片）、標籤與搜尋、封存 / 垃圾桶、歷史版本、便籤互相連結、透過雲端硬碟資料夾跨裝置同步、匯出 / 匯入、自訂全域快捷鍵。詳見下方「行為說明」。
+
+> 目前的安裝檔尚未數位簽章，第一次執行時 Windows SmartScreen 可能顯示「Windows 已保護您的電腦」，請點「其他資訊」→「仍要執行」。
+
 ## 開發
 
 需求：Node 20+、Rust stable、Visual Studio Build Tools（C++ workload + Windows SDK）、WebView2。
@@ -99,10 +107,24 @@ Rust service → note_repository → SQLite (rusqlite)
 - **自動備份**：每天第一次啟動、執行 migration 之前，以 `VACUUM INTO` 備份到 `%APPDATA%\com.pinnote.app\backups\pinnote-YYYYMMDD.db`，保留最近 7 份。這些快照引用到的圖片會同步到 `backups\images\`（只複製新檔，不再被任何快照引用的會移除）。還原方式：結束 App，用備份檔覆蓋 `pinnote.db`，並把 `backups\images\` 的檔案複製回 `images\`。
 - **匯出 / 匯入 JSON**（設定選單）：匯出包含所有狀態的便籤，以及它們使用的圖片（base64 內嵌，格式 v3 含標籤；仍可匯入舊的 v1 / v2 檔）；匯入時 id 已存在的便籤會略過，所以重複匯入同一個檔案不會產生重複便籤。匯入的便籤不會自動開到桌面。
 
-## 後續擴充預留
+## 擴充方式
 
-- 新欄位：新增 `src-tauri/migrations/000N_*.sql` 並加入 `MIGRATIONS` 清單，再擴充 `Note` / `NoteUpdate`。
-- Checklist / Markdown Lite：替換 `NoteView` 中的 textarea 為獨立編輯元件即可，儲存流程（`useNoteDraft`）不變。
-- Tag：新增 `tags`、`note_tags` 表與對應 repository / store。
+- 新欄位：新增 `src-tauri/migrations/000N_*.sql` 並加入 `MIGRATIONS` 清單，再擴充 `Note` / `NoteUpdate`；若要跨裝置同步，也要加進 `services/sync` 的同步欄位與合併規則。
 - Reminder：在 `services/` 新增排程服務，透過事件通知對應視窗。
-- Cloud Sync：`noteRepository` 是唯一資料出入口，可在其後加入同步層。
+
+## License
+
+[MIT](LICENSE)
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+
+- Committers and reviewers: [Cheng-Ching-Wu](https://github.com/Cheng-Ching-Wu)
+- Approvers: [Cheng-Ching-Wu](https://github.com/Cheng-Ching-Wu)
+
+Release binaries are built from this repository by GitHub Actions ([release.yml](.github/workflows/release.yml)) on GitHub-hosted runners.
+
+### Privacy policy
+
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. Notes are stored locally in SQLite; cross-device sync (off by default) only writes to a folder the user chooses, such as one inside a cloud drive client.

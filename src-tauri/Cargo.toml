@@ -2,7 +2,9 @@
 name = "pinnote"
 version = "0.1.0"
 description = "PinNote - lightweight desktop sticky notes"
-authors = []
+authors = ["Cheng-Ching-Wu"]
+license = "MIT"
+repository = "https://github.com/Cheng-Ching-Wu/Sticky"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

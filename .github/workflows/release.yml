@@ -1,0 +1,49 @@
+# Builds the Windows installers and attaches them to a draft GitHub Release.
+# Trigger: push a tag that matches the app version, e.g.
+#   git tag v0.1.0 && git push origin v0.1.0
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Test
+        run: |
+          npm test
+          cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Build and upload to release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
+          releaseName: PinNote ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
+          releaseBody: 安裝檔見下方 Assets。目前尚未數位簽章，首次執行若出現 SmartScreen 警告請點「其他資訊」→「仍要執行」。
+          releaseDraft: true
+          prerelease: false
