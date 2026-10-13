@@ -51,6 +51,7 @@ pub fn set_value(conn: &Connection, key: &str, value: &str) -> AppResult<()> {
 mod tests {
     use super::*;
     use crate::database::Database;
+    use crate::models::settings::TagColors;
 
     #[test]
     fn defaults_then_persists_updates() {
@@ -61,12 +62,22 @@ mod tests {
 
             let patch = AppSettingsPatch {
                 pinned_translucent: Some(false),
+                ..Default::default()
             };
             assert!(!update(conn, &patch)?.pinned_translucent);
             assert!(!get(conn)?.pinned_translucent);
 
+            let colors = TagColors::from([("work".to_string(), "blue".to_string())]);
+            let patch = AppSettingsPatch {
+                tag_colors: Some(colors.clone()),
+                ..Default::default()
+            };
+            assert_eq!(update(conn, &patch)?.tag_colors, colors);
+
             // An empty patch changes nothing.
-            assert!(!update(conn, &AppSettingsPatch::default())?.pinned_translucent);
+            let unchanged = update(conn, &AppSettingsPatch::default())?;
+            assert!(!unchanged.pinned_translucent);
+            assert_eq!(unchanged.tag_colors, colors);
 
             assert_eq!(get_value(conn, "shortcut.new_note")?, None);
             set_value(conn, "shortcut.new_note", "F15")?;

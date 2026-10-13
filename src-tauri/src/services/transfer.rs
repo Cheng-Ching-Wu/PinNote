@@ -17,8 +17,8 @@ use crate::image_refs;
 use crate::models::Note;
 use crate::services::{images, notes, window};
 
-/// v1: notes only. v2: notes + embedded images.
-const EXPORT_FORMAT_VERSION: u32 = 2;
+/// v1: notes only. v2: notes + embedded images. v3: notes carry `tags`.
+const EXPORT_FORMAT_VERSION: u32 = 3;
 const BACKUP_DIR: &str = "backups";
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -8,6 +8,8 @@ import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
 
+import { NOTE_LINK_SCHEME } from '@/utils/noteLinks'
+
 export interface NoteEditorOptions {
   placeholder?: string
   /** Maps a stored `src` (e.g. `images/x.png`) to a URL the webview can load. */
@@ -51,9 +53,16 @@ export function createNoteExtensions(options: NoteEditorOptions = {}): Extension
   const extensions: Extensions = [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
-      // Links open in the system browser via Ctrl+click (see NoteEditor.vue);
-      // a plain click must never navigate the note's webview away.
-      link: { openOnClick: false, autolink: true, defaultProtocol: 'https' },
+      // Links open via Ctrl+click (see NoteEditor.vue): web links in the system browser,
+      // `pinnote://note/<id>` links in their note window. A plain click must never
+      // navigate the note's webview away.
+      link: {
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: 'https',
+        protocols: [NOTE_LINK_SCHEME],
+        HTMLAttributes: { rel: 'noopener noreferrer nofollow', title: 'Ctrl+點擊開啟' },
+      },
     }),
     TaskList,
     TaskItem.configure({ nested: true }),

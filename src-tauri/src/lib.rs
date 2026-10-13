@@ -29,6 +29,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(AppState::default())
+        .manage(services::sync::SyncState::default())
         .setup(|app| {
             lifecycle::startup(app.handle())?;
             Ok(())
@@ -44,11 +45,26 @@ pub fn run() {
             commands::notes::soft_delete_note,
             commands::notes::restore_deleted_note,
             commands::notes::delete_note_permanently,
+            commands::notes::rename_tag,
+            commands::notes::delete_tag,
+            commands::notes::reorder_notes,
+            commands::notes::empty_trash,
+            commands::notes::get_note_revisions,
+            commands::notes::restore_note_revision,
+            commands::notes::add_note_revision,
+            commands::sync::get_sync_status,
+            commands::sync::choose_sync_folder,
+            commands::sync::disable_sync,
+            commands::sync::sync_now,
+            commands::sync::recreate_sync_folder,
             commands::windows::open_note_window,
             commands::windows::close_note_window,
             commands::windows::show_all_notes,
             commands::windows::toggle_notes_hidden,
             commands::windows::show_main_window,
+            commands::windows::toggle_search_window,
+            commands::windows::arrange_note_windows,
+            commands::windows::show_only_notes,
             commands::app::get_shortcut_status,
             commands::app::set_shortcut,
             commands::app::set_shortcuts_paused,

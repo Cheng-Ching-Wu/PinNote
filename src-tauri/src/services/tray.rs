@@ -9,6 +9,7 @@ const MENU_OPEN_MAIN: &str = "open_main";
 const MENU_SHOW_ALL: &str = "show_all";
 const MENU_FROM_CLIPBOARD: &str = "from_clipboard";
 const MENU_TOGGLE_HIDDEN: &str = "toggle_hidden";
+const MENU_SEARCH: &str = "search";
 const MENU_QUIT: &str = "quit";
 
 pub fn init(app: &AppHandle) -> tauri::Result<()> {
@@ -17,6 +18,7 @@ pub fn init(app: &AppHandle) -> tauri::Result<()> {
     let open_main = MenuItem::with_id(app, MENU_OPEN_MAIN, "開啟便籤管理", true, None::<&str>)?;
     let from_clipboard =
         MenuItem::with_id(app, MENU_FROM_CLIPBOARD, "從剪貼簿新增", true, None::<&str>)?;
+    let search = MenuItem::with_id(app, MENU_SEARCH, "快速搜尋", true, None::<&str>)?;
     let show_all = MenuItem::with_id(app, MENU_SHOW_ALL, "顯示全部便籤", true, None::<&str>)?;
     let toggle_hidden = MenuItem::with_id(
         app,
@@ -34,6 +36,7 @@ pub fn init(app: &AppHandle) -> tauri::Result<()> {
             &new_note,
             &from_clipboard,
             &open_main,
+            &search,
             &PredefinedMenuItem::separator(app)?,
             &show_all,
             &toggle_hidden,
@@ -60,6 +63,11 @@ pub fn init(app: &AppHandle) -> tauri::Result<()> {
             MENU_FROM_CLIPBOARD => {
                 if let Err(err) = notes::create_from_clipboard(app) {
                     eprintln!("[pinnote] tray: failed to create note from clipboard: {err}");
+                }
+            }
+            MENU_SEARCH => {
+                if let Err(err) = window::toggle_search_window(app) {
+                    eprintln!("[pinnote] tray: failed to open search: {err}");
                 }
             }
             MENU_TOGGLE_HIDDEN => {

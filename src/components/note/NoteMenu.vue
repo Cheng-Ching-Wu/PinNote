@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Archive, Ellipsis, LayoutList, Plus, Trash2 } from 'lucide-vue-next'
+import { Archive, Ellipsis, History, Keyboard, LayoutList, Plus, Tag, Trash2 } from 'lucide-vue-next'
 
 import {
   DropdownMenu,
@@ -16,11 +16,31 @@ defineProps<{ color: NoteColor }>()
 
 const emit = defineEmits<{
   'set-color': [color: NoteColor]
+  'edit-tags': []
+  history: []
+  shortcuts: []
   'new-note': []
   'open-main': []
   archive: []
   delete: []
 }>()
+
+/**
+ * "新增標籤" moves focus into the tag input. Without this the closing menu hands
+ * focus back to its trigger, the input blurs and tag editing ends immediately.
+ */
+let keepFocus = false
+
+function editTags() {
+  keepFocus = true
+  emit('edit-tags')
+}
+
+function onCloseAutoFocus(event: Event) {
+  if (!keepFocus) return
+  keepFocus = false
+  event.preventDefault()
+}
 </script>
 
 <template>
@@ -32,7 +52,7 @@ const emit = defineEmits<{
       <Ellipsis class="size-3.5" />
     </DropdownMenuTrigger>
 
-    <DropdownMenuContent class="w-44">
+    <DropdownMenuContent class="w-44" @close-auto-focus="onCloseAutoFocus">
       <div class="flex items-center justify-between px-1.5 py-1.5">
         <button
           v-for="option in NOTE_COLORS"
@@ -50,6 +70,14 @@ const emit = defineEmits<{
         />
       </div>
       <DropdownMenuSeparator />
+      <DropdownMenuItem @select="editTags">
+        <Tag />
+        新增標籤
+      </DropdownMenuItem>
+      <DropdownMenuItem @select="emit('history')">
+        <History />
+        歷史版本
+      </DropdownMenuItem>
       <DropdownMenuItem @select="emit('new-note')">
         <Plus />
         新增便籤
@@ -57,6 +85,10 @@ const emit = defineEmits<{
       <DropdownMenuItem @select="emit('open-main')">
         <LayoutList />
         便籤管理
+      </DropdownMenuItem>
+      <DropdownMenuItem @select="emit('shortcuts')">
+        <Keyboard />
+        快捷鍵說明
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem @select="emit('archive')">

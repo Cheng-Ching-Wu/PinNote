@@ -6,6 +6,7 @@ export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', name: 'main', component: MainView },
+    { path: '/search', name: 'search', component: () => import('@/views/SearchView.vue') },
     {
       path: '/note/:id',
       name: 'note',

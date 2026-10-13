@@ -51,5 +51,8 @@ export function useNoteDraft(id: string, delay: number) {
     await store.updateNote(id, patch)
   }
 
-  return { title, content, init, flush }
+  /** Typing that hasn't been saved yet. */
+  const hasPending = () => Object.keys(pending).length > 0
+
+  return { title, content, init, flush, hasPending }
 }

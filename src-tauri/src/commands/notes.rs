@@ -1,7 +1,7 @@
 use tauri::AppHandle;
 
 use crate::error::AppResult;
-use crate::models::{Note, NoteStatus, NoteUpdate};
+use crate::models::{Note, NoteRevision, NoteStatus, NoteUpdate};
 use crate::services::notes;
 
 #[tauri::command]
@@ -47,4 +47,47 @@ pub fn restore_deleted_note(app: AppHandle, id: String) -> AppResult<Note> {
 #[tauri::command]
 pub fn delete_note_permanently(app: AppHandle, id: String) -> AppResult<()> {
     notes::delete_permanently(&app, &id)
+}
+
+#[tauri::command]
+pub fn rename_tag(app: AppHandle, from: String, to: String) -> AppResult<()> {
+    notes::rename_tag(&app, &from, &to)
+}
+
+#[tauri::command]
+pub fn delete_tag(app: AppHandle, name: String) -> AppResult<()> {
+    notes::delete_tag(&app, &name)
+}
+
+/// Ids of one list in display order (manual sorting).
+#[tauri::command]
+pub fn reorder_notes(app: AppHandle, ids: Vec<String>) -> AppResult<()> {
+    notes::reorder(&app, &ids)
+}
+
+/// Returns how many notes were permanently deleted.
+#[tauri::command]
+pub fn empty_trash(app: AppHandle) -> AppResult<usize> {
+    notes::empty_trash(&app)
+}
+
+/// Earlier versions of a note, newest first.
+#[tauri::command]
+pub fn get_note_revisions(app: AppHandle, id: String) -> AppResult<Vec<NoteRevision>> {
+    notes::list_revisions(&app, &id)
+}
+
+#[tauri::command]
+pub fn restore_note_revision(app: AppHandle, id: String, revision_id: i64) -> AppResult<Note> {
+    notes::restore_revision(&app, &id, revision_id)
+}
+
+#[tauri::command]
+pub fn add_note_revision(
+    app: AppHandle,
+    id: String,
+    title: String,
+    content: String,
+) -> AppResult<()> {
+    notes::add_revision(&app, &id, &title, &content)
 }

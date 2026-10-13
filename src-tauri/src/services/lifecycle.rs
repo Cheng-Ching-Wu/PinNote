@@ -1,18 +1,23 @@
 //! App startup, window-close handling and shutdown.
 
+use std::time::Duration;
+
 use tauri::{AppHandle, Manager, Window, WindowEvent};
 
 use crate::database::{backup, note_repository as repo, Database};
 use crate::error::AppResult;
-use crate::services::{images, notes, shortcut, transfer, tray, window};
+use crate::services::{images, notes, shortcut, sync, transfer, tray, window};
 use crate::state::AppState;
 
 const DB_FILE: &str = "pinnote.db";
 
+/// The app usually lives in the tray for days, so expired trash is also checked periodically.
+const TRASH_CHECK_INTERVAL: Duration = Duration::from_secs(60 * 60);
+
 /// Passed by the OS login item (see `tauri_plugin_autostart::init` in lib.rs).
 pub const AUTOSTART_ARG: &str = "--autostart";
 
-/// 初始化 → 每日備份（資料庫 + 圖片）→ migrations → 清理孤兒圖片 → 載入 active notes
+/// 初始化 → 每日備份（資料庫 + 圖片）→ migrations → 清空過期垃圾桶 → 清理孤兒圖片 → 載入 active notes
 /// → Main Window → Note Windows → Tray → Global Shortcut
 pub fn startup(app: &AppHandle) -> AppResult<()> {
     let db_path = app.path().app_data_dir()?.join(DB_FILE);
@@ -30,6 +35,13 @@ pub fn startup(app: &AppHandle) -> AppResult<()> {
     app.manage(db);
 
     // After the backup above, so anything removed here is still in the backup.
+    purge_expired_trash(app);
+    let handle = app.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(TRASH_CHECK_INTERVAL);
+        purge_expired_trash(&handle);
+    });
+
     match images::cleanup(app, images::ORPHAN_GRACE) {
         Ok(result) if result.count > 0 => {
             eprintln!("[pinnote] removed {} unused image(s)", result.count)
@@ -55,6 +67,7 @@ pub fn startup(app: &AppHandle) -> AppResult<()> {
         eprintln!("[pinnote] failed to create tray icon: {err}");
     }
     shortcut::register_all(app);
+    sync::start(app);
 
     Ok(())
 }
@@ -106,4 +119,12 @@ fn persist_geometry(app: &AppHandle, id: &str) -> AppResult<()> {
         notes::update(app, id, &patch)?;
     }
     Ok(())
+}
+
+fn purge_expired_trash(app: &AppHandle) {
+    match notes::purge_expired_trash(app) {
+        Ok(0) => {}
+        Ok(count) => eprintln!("[pinnote] emptied {count} expired note(s) from the trash"),
+        Err(err) => eprintln!("[pinnote] failed to empty expired trash: {err}"),
+    }
 }

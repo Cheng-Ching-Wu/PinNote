@@ -28,13 +28,19 @@ pub fn save(app: &AppHandle, bytes: &[u8], extension: &str) -> AppResult<String>
 }
 
 /// Images referenced by any note in any status (trash included — restoring a
-/// note must bring its images back).
+/// note must bring its images back) or by an earlier version of one.
 pub fn referenced_by_notes(app: &AppHandle) -> AppResult<HashSet<String>> {
-    let notes = app
-        .state::<Database>()
-        .with_conn(|conn| note_repository::list(conn))?;
+    let (notes, revisions) = app.state::<Database>().with_conn(|conn| {
+        Ok((
+            note_repository::list(conn)?,
+            note_repository::revision_contents(conn)?,
+        ))
+    })?;
     Ok(image_refs::referenced_by_all(
-        notes.iter().map(|note| note.content.as_str()),
+        notes
+            .iter()
+            .map(|note| note.content.as_str())
+            .chain(revisions.iter().map(String::as_str)),
     ))
 }
 

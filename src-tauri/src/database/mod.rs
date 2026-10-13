@@ -6,7 +6,7 @@ pub mod settings_repository;
 use std::path::Path;
 use std::sync::Mutex;
 
-use chrono::{SecondsFormat, Utc};
+use chrono::{DateTime, SecondsFormat, Utc};
 use rusqlite::Connection;
 
 use crate::error::{AppError, AppResult};
@@ -54,5 +54,10 @@ impl Database {
 }
 
 pub fn now() -> String {
-    Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true)
+    timestamp(Utc::now())
+}
+
+/// Timestamps are stored as RFC 3339 UTC strings, so they also sort / compare as text.
+pub fn timestamp(time: DateTime<Utc>) -> String {
+    time.to_rfc3339_opts(SecondsFormat::Millis, true)
 }

@@ -26,6 +26,26 @@ const MIGRATIONS: &[Migration] = &[
         name: "create_settings",
         sql: include_str!("../../migrations/0003_create_settings.sql"),
     },
+    Migration {
+        version: 4,
+        name: "add_note_tags",
+        sql: include_str!("../../migrations/0004_add_note_tags.sql"),
+    },
+    Migration {
+        version: 5,
+        name: "add_note_sort_order",
+        sql: include_str!("../../migrations/0005_add_note_sort_order.sql"),
+    },
+    Migration {
+        version: 6,
+        name: "create_note_revisions",
+        sql: include_str!("../../migrations/0006_create_note_revisions.sql"),
+    },
+    Migration {
+        version: 7,
+        name: "sync",
+        sql: include_str!("../../migrations/0007_sync.sql"),
+    },
 ];
 
 /// Applies every migration newer than the recorded schema version,

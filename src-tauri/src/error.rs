@@ -17,6 +17,11 @@ pub enum AppError {
     #[error("note not found: {0}")]
     NoteNotFound(String),
 
+    /// The sync folder used before is gone (deleted, or the drive moved it).
+    /// Sync pauses instead of silently starting over in an empty folder.
+    #[error("同步資料夾不見了，已暫停同步")]
+    SyncFolderMissing,
+
     #[error("{0}")]
     Internal(String),
 }

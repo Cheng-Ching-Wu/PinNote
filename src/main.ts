@@ -18,7 +18,10 @@ async function bootstrap() {
   const noteId = windowService.currentNoteId()
   // Note windows are transparent so pinned notes can fade; the page must not paint a background.
   if (noteId) document.documentElement.classList.add('note-window')
-  await router.replace(noteId ? { name: 'note', params: { id: noteId } } : { name: 'main' })
+  const route = noteId
+    ? { name: 'note', params: { id: noteId } }
+    : { name: windowService.isSearchWindow() ? 'search' : 'main' }
+  await router.replace(route)
 
   await Promise.all([useNoteStore().startSync(), useSettingsStore().startSync(), imageService.init()])
   await router.isReady()

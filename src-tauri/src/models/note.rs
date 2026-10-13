@@ -72,6 +72,10 @@ pub struct Note {
 
     pub color: NoteColor,
 
+    /// Normalised with `normalize_tags`. Missing in exports made before tags existed.
+    #[serde(default)]
+    pub tags: Vec<String>,
+
     /// Physical (device pixel) outer position of the window.
     pub x: Option<i64>,
     pub y: Option<i64>,
@@ -87,9 +91,16 @@ pub struct Note {
 
     pub status: NoteStatus,
 
+    /// Manual position in the manager list (smaller first). Changed only through `reorder`.
+    #[serde(default)]
+    pub sort_order: i64,
+
     pub created_at: String,
     pub updated_at: String,
     pub deleted_at: Option<String>,
+    /// Last change of any synced field (see `SyncedNote`); maintained by the repository.
+    #[serde(default)]
+    pub modified_at: String,
 }
 
 /// Partial update sent from the frontend. `None` fields are left untouched.
@@ -99,6 +110,7 @@ pub struct NoteUpdate {
     pub title: Option<String>,
     pub content: Option<String>,
     pub color: Option<NoteColor>,
+    pub tags: Option<Vec<String>>,
 
     pub x: Option<i64>,
     pub y: Option<i64>,
@@ -128,6 +140,11 @@ impl NoteUpdate {
             content_changed |= color != note.color;
             note.color = color;
         }
+        if let Some(tags) = &self.tags {
+            let tags = normalize_tags(tags);
+            content_changed |= tags != note.tags;
+            note.tags = tags;
+        }
 
         if let Some(x) = self.x {
             note.x = Some(x);
@@ -150,4 +167,78 @@ impl NoteUpdate {
 
         content_changed
     }
+}
+
+/// Longest tag name, in characters. Longer names are cut.
+pub const MAX_TAG_LENGTH: usize = 30;
+
+/// Cleans a single tag name: no leading `#`, single spaces, at most
+/// `MAX_TAG_LENGTH` characters. Returns `None` when nothing is left.
+/// Mirrored by `normalizeTag` in `src/utils/tags.ts`.
+pub fn normalize_tag(raw: &str) -> Option<String> {
+    let name = raw.trim().trim_start_matches('#');
+    let name: String = name
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .chars()
+        .take(MAX_TAG_LENGTH)
+        .collect();
+    let name = name.trim_end();
+    (!name.is_empty()).then(|| name.to_string())
+}
+
+/// Tags are compared without case: "Work" and "work" are the same tag.
+pub fn tag_key(name: &str) -> String {
+    name.to_lowercase()
+}
+
+/// Normalises every tag and drops duplicates, keeping the first spelling and the order.
+pub fn normalize_tags(tags: &[String]) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    tags.iter()
+        .filter_map(|tag| normalize_tag(tag))
+        .filter(|tag| seen.insert(tag_key(tag)))
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn strings(values: &[&str]) -> Vec<String> {
+        values.iter().map(|v| v.to_string()).collect()
+    }
+
+    #[test]
+    fn normalize_tag_cleans_names() {
+        assert_eq!(normalize_tag("  #工作  "), Some("工作".into()));
+        assert_eq!(normalize_tag("a   b\tc"), Some("a b c".into()));
+        assert_eq!(normalize_tag("##"), None);
+        assert_eq!(normalize_tag("   "), None);
+        let long = "字".repeat(40);
+        assert_eq!(
+            normalize_tag(&long).unwrap().chars().count(),
+            MAX_TAG_LENGTH
+        );
+    }
+
+    #[test]
+    fn normalize_tags_dedupes_without_case() {
+        assert_eq!(
+            normalize_tags(&strings(&["Work", "", "待辦", "work", "#待辦", "Home"])),
+            strings(&["Work", "待辦", "Home"])
+        );
+    }
+}
+
+/// An earlier version of a note's title and content.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NoteRevision {
+    pub id: i64,
+    pub note_id: String,
+    pub title: String,
+    pub content: String,
+    pub created_at: String,
 }

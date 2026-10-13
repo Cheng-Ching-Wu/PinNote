@@ -51,3 +51,24 @@ pub async fn toggle_notes_hidden(app: AppHandle) -> AppResult<bool> {
 pub async fn show_main_window(app: AppHandle) -> AppResult<()> {
     window::show_main_window(&app)
 }
+
+#[tauri::command]
+pub async fn toggle_search_window(app: AppHandle) -> AppResult<()> {
+    window::toggle_search_window(&app)
+}
+
+/// "整理桌面便籤". Returns how many windows were moved.
+#[tauri::command]
+pub async fn arrange_note_windows(
+    app: AppHandle,
+    layout: window::ArrangeLayout,
+    anchor: window::ArrangeAnchor,
+) -> AppResult<usize> {
+    window::arrange_note_windows(&app, layout, anchor)
+}
+
+/// Shows exactly these notes on the desktop and closes the others. Returns how many are shown.
+#[tauri::command]
+pub async fn show_only_notes(app: AppHandle, ids: Vec<String>) -> AppResult<usize> {
+    notes::show_only(&app, &ids)
+}

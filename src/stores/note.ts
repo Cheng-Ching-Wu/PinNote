@@ -1,20 +1,29 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import type { Note, NoteUpdate } from '@/models/note'
+import type { ArrangeAnchor, ArrangeLayout } from '@/constants/arrange'
+import type { Note, NoteColor, NoteUpdate } from '@/models/note'
 import { noteRepository } from '@/repositories/noteRepository'
 import { imageService } from '@/services/imageService'
 import { windowService } from '@/services/windowService'
 import { formatBytes } from '@/utils/format'
-import { markdownToPlainText } from '@/utils/markdown'
+import { plainTextOf } from '@/utils/noteText'
+import { collectTags, hasTag, normalizeTags, parseTagQuery, tagKey } from '@/utils/tags'
 
 const byUpdatedDesc = (a: Note, b: Note) => b.updatedAt.localeCompare(a.updatedAt)
 const byDeletedDesc = (a: Note, b: Note) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? '')
 
+/**
+ * Matches title and content; `#term` words must each match (part of) one of the note's tags,
+ * e.g. `#工作 會議`.
+ */
 export function matchesQuery(note: Note, query: string): boolean {
-  const q = query.trim().toLowerCase()
+  const { tags, text } = parseTagQuery(query)
+  const tagsMatch = tags.every((term) => note.tags.some((tag) => tagKey(tag).includes(tagKey(term))))
+  if (!tagsMatch) return false
+  const q = text.toLowerCase()
   if (!q) return true
-  return note.title.toLowerCase().includes(q) || markdownToPlainText(note.content).toLowerCase().includes(q)
+  return note.title.toLowerCase().includes(q) || plainTextOf(note.content).toLowerCase().includes(q)
 }
 
 export const useNoteStore = defineStore('note', () => {
@@ -27,6 +36,8 @@ export const useNoteStore = defineStore('note', () => {
   const activeNotes = computed(() => notes.value.filter((n) => n.status === 'active').sort(byUpdatedDesc))
   const archivedNotes = computed(() => notes.value.filter((n) => n.status === 'archived').sort(byUpdatedDesc))
   const deletedNotes = computed(() => notes.value.filter((n) => n.status === 'deleted').sort(byDeletedDesc))
+  /** Tags of notes that aren't in the trash, for suggestions, filters and the tag manager. */
+  const allTags = computed(() => collectTags(notes.value.filter((n) => n.status !== 'deleted')))
 
   function getById(id: string): Note | undefined {
     return notes.value.find((n) => n.id === id)
@@ -76,12 +87,105 @@ export const useNoteStore = defineStore('note', () => {
     return note
   }
 
+  /**
+   * A new note with a title (quick search, `[[` links). The title is saved before the
+   * window loads it. With `open: false` the note stays off the desktop.
+   */
+  async function createNoteWithTitle(title: string, { open = true } = {}) {
+    const created = await run('新增便籤失敗', () => noteRepository.createNote())
+    if (!created) return undefined
+    const note = (await run('新增便籤失敗', () => noteRepository.updateNote(created.id, { title }))) ?? created
+    upsert(note)
+    if (open) await openNoteWindow(note.id)
+    else await closeNoteWindow(note.id) // records `isOpen = false` (no window exists)
+    return note
+  }
+
+  function addRevision(id: string, title: string, content: string) {
+    return run('保留版本失敗', () => noteRepository.addRevision(id, title, content))
+  }
+
+  function loadRevisions(id: string) {
+    return run('載入歷史版本失敗', () => noteRepository.getRevisions(id))
+  }
+
+  async function restoreRevision(id: string, revisionId: number) {
+    const note = await run('還原版本失敗', () => noteRepository.restoreRevision(id, revisionId))
+    if (note) upsert(note)
+    return note
+  }
+
   async function updateNote(id: string, data: NoteUpdate) {
     const current = getById(id)
     if (current) upsert({ ...current, ...data })
     const saved = await run('儲存便籤失敗', () => noteRepository.updateNote(id, data))
     if (saved) upsert(saved)
     return saved
+  }
+
+  function setTags(id: string, tags: string[]) {
+    return updateNote(id, { tags: normalizeTags(tags) })
+  }
+
+  async function renameTag(from: string, to: string) {
+    await run('重新命名標籤失敗', () => noteRepository.renameTag(from, to))
+  }
+
+  async function deleteTag(name: string) {
+    const key = tagKey(name)
+    // Optimistic: the confirmed notes arrive through `notes:changed`.
+    for (const note of notes.value) {
+      if (note.tags.some((tag) => tagKey(tag) === key)) {
+        upsert({ ...note, tags: note.tags.filter((tag) => tagKey(tag) !== key) })
+      }
+    }
+    await run('刪除標籤失敗', () => noteRepository.deleteTag(name))
+  }
+
+  /** Manual order of one list, ids in display order. */
+  async function reorderNotes(ids: string[]) {
+    ids.forEach((id, index) => {
+      const note = getById(id)
+      if (note) upsert({ ...note, sortOrder: index })
+    })
+    await run('儲存排序失敗', () => noteRepository.reorderNotes(ids))
+  }
+
+  async function emptyTrash() {
+    const ids = deletedNotes.value.map((note) => note.id)
+    const count = await run('清空垃圾桶失敗', () => noteRepository.emptyTrash())
+    if (count === undefined) return
+    ids.forEach(remove)
+    notice.value = count > 0 ? `已永久刪除 ${count} 張便籤` : '垃圾桶是空的'
+  }
+
+  // ---- Batch actions (multi-select in the manager) ----
+
+  async function forEachNote(ids: readonly string[], action: (id: string) => Promise<unknown>) {
+    for (const id of ids) await action(id)
+  }
+
+  const archiveNotes = (ids: readonly string[]) => forEachNote(ids, archiveNote)
+  const deleteNotes = (ids: readonly string[]) => forEachNote(ids, deleteNote)
+  const deleteNotesPermanently = (ids: readonly string[]) => forEachNote(ids, deleteNotePermanently)
+  const restoreNotes = (ids: readonly string[]) =>
+    forEachNote(ids, (id) => (getById(id)?.status === 'deleted' ? restoreDeletedNote(id) : restoreNote(id)))
+  const setColorOfNotes = (ids: readonly string[], color: NoteColor) =>
+    forEachNote(ids, (id) => (getById(id)?.color === color ? Promise.resolve() : updateNote(id, { color })))
+
+  function addTagToNotes(ids: readonly string[], name: string) {
+    return forEachNote(ids, async (id) => {
+      const note = getById(id)
+      if (note && !hasTag(note, name)) await setTags(id, [...note.tags, name])
+    })
+  }
+
+  function removeTagFromNotes(ids: readonly string[], name: string) {
+    const key = tagKey(name)
+    return forEachNote(ids, async (id) => {
+      const note = getById(id)
+      if (note && hasTag(note, name)) await setTags(id, note.tags.filter((tag) => tagKey(tag) !== key))
+    })
   }
 
   async function changeStatus(id: string, label: string, task: () => Promise<Note>, closeWindow: boolean) {
@@ -118,6 +222,17 @@ export const useNoteStore = defineStore('note', () => {
   async function showAllNotes() {
     const shown = await run('顯示便籤失敗', () => windowService.showAllNotes())
     if (shown !== undefined) notice.value = shown > 0 ? `已顯示 ${shown} 張便籤` : '沒有可顯示的便籤'
+  }
+
+  async function arrangeNotes(layout: ArrangeLayout, anchor: ArrangeAnchor) {
+    const moved = await run('整理便籤失敗', () => windowService.arrangeNoteWindows(layout, anchor))
+    if (moved !== undefined) notice.value = moved > 0 ? `已整理 ${moved} 張便籤` : '桌面上沒有便籤'
+  }
+
+  /** Desktop workspace: only these notes stay open. */
+  async function showOnlyNotes(ids: string[]) {
+    const shown = await run('顯示便籤失敗', () => windowService.showOnlyNotes(ids))
+    if (shown !== undefined) notice.value = `桌面只顯示 ${shown} 張便籤（其他已關閉，可用「顯示全部便籤」叫回）`
   }
 
   async function toggleNotesHidden() {
@@ -170,11 +285,28 @@ export const useNoteStore = defineStore('note', () => {
     activeNotes,
     archivedNotes,
     deletedNotes,
+    allTags,
     getById,
     loadNotes,
     loadNote,
     createNote,
+    createNoteWithTitle,
+    loadRevisions,
+    addRevision,
+    restoreRevision,
     updateNote,
+    setTags,
+    renameTag,
+    deleteTag,
+    reorderNotes,
+    emptyTrash,
+    archiveNotes,
+    deleteNotes,
+    deleteNotesPermanently,
+    restoreNotes,
+    setColorOfNotes,
+    addTagToNotes,
+    removeTagFromNotes,
     archiveNote,
     restoreNote,
     deleteNote,
@@ -183,6 +315,8 @@ export const useNoteStore = defineStore('note', () => {
     openNoteWindow,
     closeNoteWindow,
     showAllNotes,
+    arrangeNotes,
+    showOnlyNotes,
     toggleNotesHidden,
     exportNotes,
     importNotes,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Archive, ArchiveRestore, Ellipsis, ExternalLink, RotateCcw, Trash2 } from 'lucide-vue-next'
+import { Archive, ArchiveRestore, Ellipsis, ExternalLink, RotateCcw, Tag, Trash2 } from 'lucide-vue-next'
 
 import { buttonVariants } from '@/components/ui/button'
 import {
@@ -17,6 +17,7 @@ defineProps<{ status: NoteStatus }>()
 
 const emit = defineEmits<{
   open: []
+  'edit-tags': []
   archive: []
   restore: []
   delete: []
@@ -64,6 +65,10 @@ function deletePermanently(event: Event) {
           <ExternalLink />
           開啟便籤
         </DropdownMenuItem>
+        <DropdownMenuItem @select="emit('edit-tags')">
+          <Tag />
+          編輯標籤…
+        </DropdownMenuItem>
         <DropdownMenuItem @select="emit('archive')">
           <Archive />
           封存
@@ -79,6 +84,10 @@ function deletePermanently(event: Event) {
         <DropdownMenuItem @select="emit('restore')">
           <ArchiveRestore />
           取消封存
+        </DropdownMenuItem>
+        <DropdownMenuItem @select="emit('edit-tags')">
+          <Tag />
+          編輯標籤…
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" @select="emit('delete')">

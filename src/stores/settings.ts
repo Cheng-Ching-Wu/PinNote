@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import { type AppSettings, DEFAULT_SETTINGS } from '@/models/settings'
 import { settingsRepository } from '@/repositories/settingsRepository'
 import { settingsService } from '@/services/settingsService'
+import { tagKey } from '@/utils/tags'
 
 export const useSettingsStore = defineStore('settings', () => {
   /** Preferences stored in SQLite, shared by all windows. */
@@ -37,6 +38,14 @@ export const useSettingsStore = defineStore('settings', () => {
       settings.value = await settingsRepository.updateSettings(data)
     })
 
+  /** `null` goes back to the automatic color. */
+  function setTagColor(name: string, color: string | null) {
+    const tagColors = { ...settings.value.tagColors }
+    if (color) tagColors[tagKey(name)] = color
+    else delete tagColors[tagKey(name)]
+    return updateSettings({ tagColors })
+  }
+
   const setAutostart = (enabled: boolean) =>
     guard('變更開機啟動失敗', async () => {
       autostart.value = await settingsService.setAutostart(enabled)
@@ -59,6 +68,7 @@ export const useSettingsStore = defineStore('settings', () => {
     loadSettings,
     loadAutostart,
     updateSettings,
+    setTagColor,
     setAutostart,
     openBackupFolder,
     startSync,

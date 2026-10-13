@@ -16,16 +16,23 @@ pub enum ShortcutAction {
     NewNote,
     NewFromClipboard,
     ToggleHidden,
+    QuickSearch,
 }
 
 impl ShortcutAction {
-    pub const ALL: [Self; 3] = [Self::NewNote, Self::NewFromClipboard, Self::ToggleHidden];
+    pub const ALL: [Self; 4] = [
+        Self::NewNote,
+        Self::NewFromClipboard,
+        Self::ToggleHidden,
+        Self::QuickSearch,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
             Self::NewNote => "new_note",
             Self::NewFromClipboard => "new_from_clipboard",
             Self::ToggleHidden => "toggle_hidden",
+            Self::QuickSearch => "quick_search",
         }
     }
 
@@ -38,6 +45,7 @@ impl ShortcutAction {
             Self::NewNote => "新增便籤",
             Self::NewFromClipboard => "從剪貼簿新增",
             Self::ToggleHidden => "隱藏 / 顯示便籤",
+            Self::QuickSearch => "快速搜尋",
         }
     }
 
@@ -46,6 +54,7 @@ impl ShortcutAction {
             Self::NewNote => "Ctrl+Alt+N",
             Self::NewFromClipboard => "Ctrl+Alt+V",
             Self::ToggleHidden => "Ctrl+Alt+H",
+            Self::QuickSearch => "Ctrl+Alt+F",
         }
     }
 
@@ -58,6 +67,7 @@ impl ShortcutAction {
             Self::NewNote => notes::create_and_open(app).map(|_| ()),
             Self::NewFromClipboard => notes::create_from_clipboard(app).map(|_| ()),
             Self::ToggleHidden => window::toggle_notes_hidden(app).map(|_| ()),
+            Self::QuickSearch => window::toggle_search_window(app),
         }
     }
 }

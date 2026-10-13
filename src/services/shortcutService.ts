@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 
 export interface ShortcutStatus {
-  /** Stable id: 'new_note' | 'new_from_clipboard' | 'toggle_hidden'. */
+  /** Stable id: 'new_note' | 'new_from_clipboard' | 'toggle_hidden' | 'quick_search'. */
   action: string
   label: string
   /** '' when disabled. */

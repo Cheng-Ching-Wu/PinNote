@@ -19,6 +19,9 @@ const emit = defineEmits<{
   'toggle-collapse': []
   close: []
   'set-color': [color: NoteColor]
+  'edit-tags': []
+  history: []
+  shortcuts: []
   'new-note': []
   'open-main': []
   archive: []
@@ -55,6 +58,9 @@ const onHover = 'opacity-0 transition-opacity group-hover/note:opacity-100 focus
       <NoteMenu
         :color="color"
         @set-color="emit('set-color', $event)"
+        @edit-tags="emit('edit-tags')"
+        @history="emit('history')"
+        @shortcuts="emit('shortcuts')"
         @new-note="emit('new-note')"
         @open-main="emit('open-main')"
         @archive="emit('archive')"

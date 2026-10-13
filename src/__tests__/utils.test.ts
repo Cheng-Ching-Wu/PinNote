@@ -11,6 +11,7 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     title: 'API 待確認',
     content: 'RTPMS\n碼頭 API\n航行時間 API',
     color: 'yellow',
+    tags: [],
     x: null,
     y: null,
     width: 320,
@@ -19,9 +20,11 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     collapsed: false,
     isOpen: true,
     status: 'active',
+    sortOrder: 0,
     createdAt: '2026-10-01T00:00:00.000Z',
     updatedAt: '2026-10-01T00:00:00.000Z',
     deletedAt: null,
+    modifiedAt: '2026-10-01T00:00:00.000Z',
     ...overrides,
   }
 }
@@ -37,6 +40,15 @@ describe('matchesQuery', () => {
 
   it('treats a blank query as match-all', () => {
     expect(matchesQuery(makeNote(), '   ')).toBe(true)
+  })
+
+  it('requires every #term to match one of the tags', () => {
+    const note = makeNote({ tags: ['工作', 'Backend'] })
+    expect(matchesQuery(note, '#工作')).toBe(true)
+    expect(matchesQuery(note, '#back API')).toBe(true)
+    expect(matchesQuery(note, '#工作 #家庭')).toBe(false)
+    expect(matchesQuery(note, '#工作 甘特圖')).toBe(false)
+    expect(matchesQuery(makeNote(), '#工作')).toBe(false)
   })
 })
 
