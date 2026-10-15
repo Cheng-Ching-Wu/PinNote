@@ -13,9 +13,11 @@ use tauri_plugin_opener::OpenerExt;
 use crate::database::{note_repository as repo, now, Database};
 use crate::error::{AppError, AppResult};
 use crate::events;
+use crate::i18n::pick;
 use crate::image_refs;
 use crate::models::Note;
 use crate::services::{images, notes, window};
+use crate::tr;
 
 /// v1: notes only. v2: notes + embedded images. v3: notes carry `tags`.
 const EXPORT_FORMAT_VERSION: u32 = 3;
@@ -69,7 +71,7 @@ pub fn open_backup_dir(app: &AppHandle) -> AppResult<()> {
 /// Returns `None` when the dialog is cancelled.
 pub fn export(app: &AppHandle) -> AppResult<Option<TransferResult>> {
     let file_name = format!("pinnote-export-{}.json", Local::now().format("%Y%m%d"));
-    let Some(path) = file_dialog(app, "匯出便籤")
+    let Some(path) = file_dialog(app, pick("匯出便籤", "Export notes"))
         .set_file_name(file_name)
         .blocking_save_file()
     else {
@@ -119,7 +121,8 @@ pub fn export(app: &AppHandle) -> AppResult<Option<TransferResult>> {
 /// already exists are left untouched, so importing the same file twice is
 /// harmless. Imported notes are not opened on the desktop automatically.
 pub fn import(app: &AppHandle) -> AppResult<Option<TransferResult>> {
-    let Some(path) = file_dialog(app, "匯入便籤").blocking_pick_file() else {
+    let Some(path) = file_dialog(app, pick("匯入便籤", "Import notes")).blocking_pick_file()
+    else {
         return Ok(None);
     };
     let path = path
@@ -128,8 +131,9 @@ pub fn import(app: &AppHandle) -> AppResult<Option<TransferResult>> {
 
     let file: ExportFile = serde_json::from_slice(&std::fs::read(&path)?)?;
     if file.format_version > EXPORT_FORMAT_VERSION {
-        return Err(AppError::Internal(format!(
+        return Err(AppError::Internal(tr!(
             "此檔案由較新版本匯出（格式 v{}），請先更新 PinNote",
+            "This file was exported by a newer version (format v{}). Please update PinNote first",
             file.format_version
         )));
     }

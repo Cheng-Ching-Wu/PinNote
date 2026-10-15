@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
+import { type MessageKey, t } from '@/i18n'
 import { type SyncStatus, syncService } from '@/services/syncService'
 
 export const useSyncStore = defineStore('sync', () => {
@@ -16,21 +17,21 @@ export const useSyncStore = defineStore('sync', () => {
 
   const enabled = computed(() => !!status.value.folder)
 
-  async function guard(label: string, task: () => Promise<SyncStatus | null>) {
+  async function guard(label: MessageKey, task: () => Promise<SyncStatus | null>) {
     error.value = null
     try {
       const next = await task()
       if (next) status.value = next
     } catch (err) {
-      error.value = `${label}: ${String(err)}`
+      error.value = `${t(label)}: ${String(err)}`
     }
   }
 
-  const load = () => guard('讀取同步狀態失敗', () => syncService.getStatus())
-  const chooseFolder = () => guard('設定同步資料夾失敗', () => syncService.chooseFolder())
-  const disable = () => guard('停止同步失敗', () => syncService.disable())
-  const syncNow = () => guard('同步失敗', () => syncService.syncNow())
-  const recreateFolder = () => guard('重新建立同步資料夾失敗', () => syncService.recreateFolder())
+  const load = () => guard('errors.loadSync', () => syncService.getStatus())
+  const chooseFolder = () => guard('errors.chooseSyncFolder', () => syncService.chooseFolder())
+  const disable = () => guard('errors.disableSync', () => syncService.disable())
+  const syncNow = () => guard('errors.sync', () => syncService.syncNow())
+  const recreateFolder = () => guard('errors.recreateSyncFolder', () => syncService.recreateFolder())
 
   let unsubscribe: (() => void) | null = null
 

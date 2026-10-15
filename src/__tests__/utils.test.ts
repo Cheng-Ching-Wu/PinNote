@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { setLocale } from '@/i18n'
 import type { Note } from '@/models/note'
 import { matchesQuery } from '@/stores/note'
 import { debounce } from '@/utils/debounce'
@@ -55,10 +56,19 @@ describe('matchesQuery', () => {
 describe('formatNoteTime', () => {
   const now = new Date(2026, 9, 2, 12, 0)
 
+  afterEach(() => setLocale('zh-TW'))
+
   it('formats today / yesterday / older dates', () => {
+    setLocale('zh-TW')
     expect(formatNoteTime(new Date(2026, 9, 2, 8, 32).toISOString(), now)).toBe('今天 08:32')
     expect(formatNoteTime(new Date(2026, 9, 1, 17, 20).toISOString(), now)).toBe('昨天 17:20')
     expect(formatNoteTime(new Date(2026, 8, 30, 9, 5).toISOString(), now)).toBe('2026/09/30 09:05')
+  })
+
+  it('follows the UI language', () => {
+    setLocale('en')
+    expect(formatNoteTime(new Date(2026, 9, 2, 8, 32).toISOString(), now)).toBe('Today 08:32')
+    expect(formatNoteTime(new Date(2026, 9, 1, 17, 20).toISOString(), now)).toBe('Yesterday 17:20')
   })
 
   it('returns an empty string for invalid input', () => {

@@ -4,6 +4,7 @@ import { Ban, RotateCcw } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { useShortcutStore } from '@/stores/shortcuts'
 import { formatAccelerator, recordAccelerator } from '@/utils/accelerator'
@@ -81,15 +82,15 @@ onBeforeUnmount(() => {
 <template>
   <Dialog v-model:open="open">
     <DialogContent>
-      <DialogTitle class="text-[15px] font-semibold">自訂快捷鍵</DialogTitle>
+      <DialogTitle class="text-[15px] font-semibold">{{ t('shortcuts.dialogTitle') }}</DialogTitle>
       <DialogDescription class="mt-1 text-xs leading-relaxed text-muted-foreground">
-        點擊按鍵欄位後按下想用的按鍵。可用組合鍵（如 Ctrl+Alt+N），或單獨使用 F13–F24 等巨集鍵；按 Esc 取消錄製。
+        {{ t('shortcuts.dialogDescription') }}
       </DialogDescription>
 
       <div class="mt-3">
         <div v-for="status in store.statuses" :key="status.action" class="border-b py-2.5 last:border-0">
           <div class="flex items-center gap-1.5">
-            <span class="flex-1 text-[13px]">{{ status.label }}</span>
+            <span class="flex-1 text-[13px]">{{ store.labelOf(status) }}</span>
             <button
               type="button"
               :class="
@@ -99,15 +100,15 @@ onBeforeUnmount(() => {
                   recording === status.action && 'border-ring bg-card ring-2 ring-ring/25',
                 )
               "
-              :title="recording === status.action ? '按 Esc 取消' : '點擊後按下新的按鍵'"
+              :title="recording === status.action ? t('shortcuts.escToCancel') : t('shortcuts.clickToRecord')"
               @click="recording === status.action ? stopRecording() : startRecording(status.action)"
             >
-              {{ recording === status.action ? preview || '請按下按鍵…' : formatAccelerator(status.accelerator) }}
+              {{ recording === status.action ? preview || t('shortcuts.pressKeys') : formatAccelerator(status.accelerator) }}
             </button>
             <Button
               variant="ghost"
               size="icon-xs"
-              :title="`恢復預設（${formatAccelerator(status.defaultAccelerator)}）`"
+              :title="t('shortcuts.resetDefault', { keys: formatAccelerator(status.defaultAccelerator) })"
               :disabled="status.accelerator === status.defaultAccelerator"
               @click="apply(status.action, status.defaultAccelerator)"
             >
@@ -116,7 +117,7 @@ onBeforeUnmount(() => {
             <Button
               variant="ghost"
               size="icon-xs"
-              title="停用此快捷鍵"
+              :title="t('shortcuts.disable')"
               :disabled="!status.accelerator"
               @click="apply(status.action, '')"
             >
@@ -125,7 +126,7 @@ onBeforeUnmount(() => {
           </div>
           <p v-if="errors[status.action]" class="mt-1 text-xs text-destructive">{{ errors[status.action] }}</p>
           <p v-else-if="status.accelerator && !status.registered" class="mt-1 text-xs text-destructive">
-            目前無法使用，可能已被其他程式占用，請換一組按鍵
+            {{ t('shortcuts.unavailable') }}
           </p>
         </div>
       </div>

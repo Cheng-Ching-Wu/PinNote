@@ -4,8 +4,9 @@ import { Check, Trash2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { TAG_COLOR_LABELS, TAG_COLOR_VALUES, TAG_COLORS, type TagColor } from '@/constants/tagColors'
+import { TAG_COLOR_VALUES, TAG_COLORS, type TagColor } from '@/constants/tagColors'
 import { useTagColors } from '@/composables/useTagColors'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { useNoteStore } from '@/stores/note'
 import { useSettingsStore } from '@/stores/settings'
@@ -47,20 +48,20 @@ function cancelRename(tag: TagSummary, event: Event) {
 <template>
   <Dialog v-model:open="open">
     <DialogContent class="max-w-md">
-      <DialogTitle class="text-[15px] font-semibold">管理標籤</DialogTitle>
+      <DialogTitle class="text-[15px] font-semibold">{{ t('tags.managerTitle') }}</DialogTitle>
       <DialogDescription class="mt-1 text-xs leading-relaxed text-muted-foreground">
-        點擊名稱即可改名，改成已存在的名稱會合併兩個標籤。刪除標籤只會從便籤上移除，不會刪除便籤。
+        {{ t('tags.managerDescription') }}
       </DialogDescription>
 
       <p v-if="store.allTags.length === 0" class="py-8 text-center text-xs text-muted-foreground">
-        還沒有標籤，可在便籤選單中新增
+        {{ t('tags.none') }}
       </p>
       <ul v-else class="mt-3 max-h-80 overflow-y-auto">
         <li v-for="tag in store.allTags" :key="tag.key" class="flex items-center gap-1.5 border-b py-1.5 last:border-0">
           <DropdownMenu :modal="false">
             <DropdownMenuTrigger
               class="inline-flex size-6 shrink-0 items-center justify-center rounded-sm outline-none hover:bg-accent data-[state=open]:bg-accent"
-              title="變更顏色"
+              :title="t('common.changeColor')"
             >
               <span class="size-2.5 rounded-full" :style="{ backgroundColor: tagColorValue(tag.name) }" />
             </DropdownMenuTrigger>
@@ -70,7 +71,7 @@ function cancelRename(tag: TagSummary, event: Event) {
                   v-for="color in TAG_COLORS"
                   :key="color"
                   type="button"
-                  :title="TAG_COLOR_LABELS[color]"
+                  :title="t(`tagColors.${color}`)"
                   :class="
                     cn(
                       'size-5 rounded-full transition-transform hover:scale-110',
@@ -85,7 +86,7 @@ function cancelRename(tag: TagSummary, event: Event) {
               </div>
               <DropdownMenuItem @select="setColor(tag, null)">
                 <Check :class="cn(hasCustomColor(tag) && 'invisible')" />
-                自動配色
+                {{ t('tags.autoColor') }}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -95,16 +96,18 @@ function cancelRename(tag: TagSummary, event: Event) {
             :maxlength="MAX_TAG_LENGTH"
             spellcheck="false"
             class="h-7 min-w-0 flex-1 rounded-sm border border-transparent bg-transparent px-1.5 text-[13px] outline-none hover:border-input focus:border-ring focus:ring-2 focus:ring-ring/20"
-            title="點擊改名"
+            :title="t('tags.rename')"
             @keydown.enter.prevent="($event.target as HTMLInputElement).blur()"
             @keydown.esc.stop.prevent="cancelRename(tag, $event)"
             @blur="rename(tag, $event)"
           />
-          <span class="w-12 shrink-0 text-right text-[11px] text-muted-foreground tabular-nums">{{ tag.count }} 張</span>
+          <span class="w-12 shrink-0 text-right text-[11px] text-muted-foreground tabular-nums">
+            {{ t('tags.noteCount', { count: tag.count }) }}
+          </span>
           <Button
             variant="ghost-destructive"
             size="icon-xs"
-            :title="`刪除標籤「${tag.name}」`"
+            :title="t('tags.delete', { name: tag.name })"
             @click="store.deleteTag(tag.name)"
           >
             <Trash2 class="size-3.5" />

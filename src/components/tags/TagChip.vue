@@ -2,6 +2,7 @@
 import type { HTMLAttributes } from 'vue'
 import { X } from 'lucide-vue-next'
 
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 
 const props = defineProps<{
@@ -33,7 +34,7 @@ const emit = defineEmits<{ remove: [] }>()
     <button
       v-if="removable"
       type="button"
-      :title="`移除標籤「${name}」`"
+      :title="t('tags.remove', { name })"
       class="inline-flex size-4 shrink-0 items-center justify-center rounded-full opacity-50 outline-none hover:bg-current/10 hover:opacity-100 focus-visible:opacity-100"
       @click.stop="emit('remove')"
     >

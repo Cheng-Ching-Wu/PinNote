@@ -5,6 +5,7 @@ import TagChip from '@/components/tags/TagChip.vue'
 import TagInput from '@/components/tags/TagInput.vue'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { useTagColors } from '@/composables/useTagColors'
+import { t } from '@/i18n'
 import type { Note } from '@/models/note'
 import { useNoteStore } from '@/stores/note'
 import { tagKey } from '@/utils/tags'
@@ -60,11 +61,11 @@ function removeLast() {
   <Dialog v-model:open="open">
     <DialogContent @open-auto-focus.prevent>
       <DialogTitle class="text-[15px] font-semibold">
-        {{ notes.length > 1 ? `編輯 ${notes.length} 張便籤的標籤` : '編輯標籤' }}
+        {{ notes.length > 1 ? t('tags.editTitleMany', { count: notes.length }) : t('tags.editTitle') }}
       </DialogTitle>
       <DialogDescription class="mt-1 text-xs text-muted-foreground">
-        輸入名稱後按 Enter 新增，可從清單選擇既有的標籤。
-        <template v-if="notes.length > 1">新增或移除會套用到所有選取的便籤。</template>
+        {{ t('tags.editDescription') }}
+        <template v-if="notes.length > 1">{{ t('tags.editDescriptionMany') }}</template>
       </DialogDescription>
 
       <div

@@ -6,6 +6,7 @@ import NoteItemMenu from '@/components/main/NoteItemMenu.vue'
 import TagChip from '@/components/tags/TagChip.vue'
 import { useTagColors } from '@/composables/useTagColors'
 import { NOTE_COLOR_CLASSES } from '@/constants/noteColors'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import type { Note } from '@/models/note'
 import { noteHeading, noteLines, notePreview } from '@/utils/noteText'
@@ -39,7 +40,7 @@ const preview = computed(() => notePreview(props.note, lines.value))
 
 const timeLabel = computed(() =>
   props.note.status === 'deleted' && props.note.deletedAt
-    ? `刪除於 ${formatNoteTime(props.note.deletedAt)}`
+    ? t('item.deletedAt', { time: formatNoteTime(props.note.deletedAt) })
     : formatNoteTime(props.note.updatedAt),
 )
 
@@ -111,9 +112,9 @@ function onMousedown(event: MouseEvent) {
       <div class="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground/80">
         <span class="shrink-0">{{ timeLabel }}</span>
         <Pin v-if="note.alwaysOnTop && isActive" class="size-3 fill-current" />
-        <span v-if="isHidden" class="inline-flex items-center gap-0.5" title="這張便籤已關閉，點擊即可重新顯示在桌面">
+        <span v-if="isHidden" class="inline-flex items-center gap-0.5" :title="t('item.hiddenTitle')">
           <EyeOff class="size-3" />
-          未顯示
+          {{ t('item.hidden') }}
         </span>
       </div>
       <div
@@ -121,7 +122,7 @@ function onMousedown(event: MouseEvent) {
         class="mt-1 flex min-w-0 items-center gap-1 overflow-hidden text-[11px] text-foreground/80"
       >
         <TagChip v-for="tag in visibleTags" :key="tag" :name="tag" :color="tagColorValue(tag)" class="max-w-24" />
-        <span v-if="hiddenTags.length" class="shrink-0 text-muted-foreground" :title="hiddenTags.join('、')">
+        <span v-if="hiddenTags.length" class="shrink-0 text-muted-foreground" :title="hiddenTags.join(t('item.tagSeparator'))">
           +{{ hiddenTags.length }}
         </span>
       </div>

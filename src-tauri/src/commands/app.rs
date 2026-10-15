@@ -7,6 +7,7 @@ use crate::models::{AppSettings, AppSettingsPatch};
 use crate::services::transfer::{self, TransferResult};
 use crate::services::{images, settings, shortcut};
 use crate::state::ShortcutStatus;
+use crate::tr;
 
 #[tauri::command]
 pub fn get_shortcut_status(app: AppHandle) -> Vec<ShortcutStatus> {
@@ -82,7 +83,10 @@ pub async fn import_notes(app: AppHandle) -> AppResult<Option<TransferResult>> {
 pub fn open_external(app: AppHandle, url: String) -> AppResult<()> {
     const ALLOWED: [&str; 3] = ["http://", "https://", "mailto:"];
     if !ALLOWED.iter().any(|scheme| url.starts_with(scheme)) {
-        return Err(AppError::Internal(format!("不支援的連結: {url}")));
+        return Err(AppError::Internal(tr!(
+            "不支援的連結: {url}",
+            "Unsupported link: {url}"
+        )));
     }
     app.opener()
         .open_url(url, None::<&str>)

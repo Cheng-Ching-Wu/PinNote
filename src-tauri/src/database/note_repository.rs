@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use super::{now, timestamp};
 use crate::error::{AppError, AppResult};
+use crate::i18n::pick;
 use crate::models::note::{normalize_tag, normalize_tags, tag_key, DEFAULT_HEIGHT, DEFAULT_WIDTH};
 use std::collections::HashMap;
 
@@ -246,7 +247,9 @@ pub fn restore_revision(conn: &mut Connection, note_id: &str, revision_id: i64) 
             |row| Ok((row.get(0)?, row.get(1)?)),
         )
         .optional()?
-        .ok_or_else(|| AppError::Internal("找不到這個版本".into()))?;
+        .ok_or_else(|| {
+            AppError::Internal(pick("找不到這個版本", "This version can't be found").into())
+        })?;
 
     let mut note = get(&tx, note_id)?;
     if (note.title.as_str(), note.content.as_str()) != (title.as_str(), content.as_str()) {
@@ -292,7 +295,9 @@ pub fn set_open(conn: &Connection, id: &str, is_open: bool) -> AppResult<Note> {
 /// Renames a tag on every note (merging into an existing tag of the new name).
 /// Returns the notes that changed. `updated_at` is kept: this is housekeeping, not an edit.
 pub fn rename_tag(conn: &mut Connection, from: &str, to: &str) -> AppResult<Vec<Note>> {
-    let to = normalize_tag(to).ok_or_else(|| AppError::Internal("標籤名稱不可為空".into()))?;
+    let to = normalize_tag(to).ok_or_else(|| {
+        AppError::Internal(pick("標籤名稱不可為空", "The tag name can't be empty").into())
+    })?;
     let key = tag_key(from);
     replace_tags(conn, |tags| {
         let renamed: Vec<String> = tags

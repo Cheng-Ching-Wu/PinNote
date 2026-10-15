@@ -1,3 +1,4 @@
+import { collatorLocale } from '@/i18n'
 import type { Note } from '@/models/note'
 
 /** Longest tag name, in characters. Mirrors `MAX_TAG_LENGTH` in `src-tauri/src/models/note.rs`. */
@@ -55,7 +56,7 @@ export function collectTags(notes: readonly Pick<Note, 'tags'>[]): TagSummary[] 
       else byKey.set(key, { name: tag, key, count: 1 })
     }
   }
-  return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
+  return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name, collatorLocale()))
 }
 
 /** Pseudo tag key for the "未分類" filter. Real keys can't be empty. */

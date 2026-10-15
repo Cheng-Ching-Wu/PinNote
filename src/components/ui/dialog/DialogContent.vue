@@ -3,6 +3,7 @@ import type { HTMLAttributes } from 'vue'
 import { DialogClose, DialogContent, DialogOverlay, DialogPortal } from 'reka-ui'
 import { X } from 'lucide-vue-next'
 
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 
 defineOptions({ inheritAttrs: false })
@@ -25,7 +26,7 @@ const props = defineProps<{ class?: HTMLAttributes['class'] }>()
       <slot />
       <DialogClose
         class="absolute top-3 right-3 inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent"
-        title="關閉"
+        :title="t('common.close')"
       >
         <X class="size-4" />
       </DialogClose>

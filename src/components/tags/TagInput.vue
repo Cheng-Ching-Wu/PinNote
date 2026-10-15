@@ -2,6 +2,7 @@
 import { computed, type HTMLAttributes, ref, useTemplateRef, watch } from 'vue'
 import { Plus } from 'lucide-vue-next'
 
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { MAX_TAG_LENGTH, normalizeTag, tagKey } from '@/utils/tags'
 
@@ -19,7 +20,7 @@ const props = withDefaults(
     listClass?: HTMLAttributes['class']
     tagColor?: (name: string) => string
   }>(),
-  { placement: 'bottom', placeholder: '新增標籤…' },
+  { placement: 'bottom', placeholder: () => t('tags.inputPlaceholder') },
 )
 
 const emit = defineEmits<{
@@ -166,7 +167,7 @@ defineExpose({ focus: () => inputRef.value?.focus() })
         @mousedown.prevent="add(newName)"
       >
         <Plus class="size-3 shrink-0" />
-        <span class="truncate">新增「{{ newName }}」</span>
+        <span class="truncate">{{ t('tags.addNamed', { name: newName }) }}</span>
       </li>
     </ul>
   </div>

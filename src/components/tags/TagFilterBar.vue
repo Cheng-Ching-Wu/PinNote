@@ -3,6 +3,7 @@ import { nextTick, useTemplateRef, watch } from 'vue'
 
 import { useHorizontalOverflow } from '@/composables/useHorizontalOverflow'
 import { useTagColors } from '@/composables/useTagColors'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { type TagSummary, UNTAGGED_KEY } from '@/utils/tags'
 
@@ -43,10 +44,10 @@ const on = 'border-foreground/30 bg-accent text-foreground font-medium'
       <button
         type="button"
         :class="cn(chip, selected.length === 0 ? on : idle)"
-        title="顯示所有便籤"
+        :title="t('tags.allTitle')"
         @click="selected = []"
       >
-        全部
+        {{ t('tags.all') }}
       </button>
       <button
         v-for="tag in tags"
@@ -67,7 +68,7 @@ const on = 'border-foreground/30 bg-accent text-foreground font-medium'
         :aria-pressed="selected.includes(UNTAGGED_KEY)"
         @click="toggle(UNTAGGED_KEY)"
       >
-        未分類
+        {{ t('tags.untagged') }}
         <span class="text-[11px] font-normal text-muted-foreground tabular-nums">{{ untaggedCount }}</span>
       </button>
     </div>

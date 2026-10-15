@@ -13,6 +13,7 @@ import {
   FolderSync,
   ImageOff,
   Keyboard,
+  Languages,
   LayoutGrid,
   Layers,
   Settings,
@@ -33,19 +34,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { buttonVariants } from '@/components/ui/button'
 import {
-  ARRANGE_ANCHOR_LABELS,
   ARRANGE_ANCHORS,
-  ARRANGE_LAYOUT_LABELS,
   ARRANGE_LAYOUTS,
   type ArrangeAnchor,
   type ArrangeLayout,
   isArrangeAnchor,
   isArrangeLayout,
 } from '@/constants/arrange'
+import { LANGUAGE_SETTINGS, type LanguageSetting, LOCALE_NAMES, t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { loadStored, saveStored } from '@/utils/storage'
 
-defineProps<{ autostart: boolean; pinnedTranslucent: boolean }>()
+defineProps<{ autostart: boolean; pinnedTranslucent: boolean; language: LanguageSetting }>()
 
 const emit = defineEmits<{
   'show-all': []
@@ -60,6 +60,7 @@ const emit = defineEmits<{
   import: []
   'open-backups': []
   sync: []
+  language: [language: LanguageSetting]
 }>()
 
 // ---- 整理桌面便籤 (submenu): pick a layout, then a corner to run it ----
@@ -92,6 +93,9 @@ function arrange(anchor: ArrangeAnchor) {
 }
 
 /** Checkbox items keep the menu open so the new state is visible. */
+const languageName = (language: LanguageSetting) =>
+  language === 'system' ? t('language.system') : LOCALE_NAMES[language]
+
 function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent') {
   event.preventDefault()
   if (action === 'toggle-autostart') emit('toggle-autostart')
@@ -101,37 +105,37 @@ function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent
 
 <template>
   <DropdownMenu :modal="false">
-    <DropdownMenuTrigger :class="buttonVariants({ variant: 'ghost', size: 'icon-sm' })" title="設定">
+    <DropdownMenuTrigger :class="buttonVariants({ variant: 'ghost', size: 'icon-sm' })" :title="t('menu.settings')">
       <Settings class="size-4" />
     </DropdownMenuTrigger>
 
     <DropdownMenuContent class="w-60">
       <DropdownMenuItem @select="emit('show-all')">
         <Layers />
-        顯示全部便籤
+        {{ t('menu.showAll') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('toggle-hidden')">
         <EyeOff />
-        隱藏 / 顯示便籤
+        {{ t('menu.toggleHidden') }}
         <span class="ml-auto text-[11px] text-muted-foreground">Ctrl+Alt+H</span>
       </DropdownMenuItem>
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
           <LayoutGrid />
-          整理桌面便籤
+          {{ t('arrange.title') }}
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent class="w-40">
-          <DropdownMenuLabel>排列方式</DropdownMenuLabel>
+          <DropdownMenuLabel>{{ t('arrange.layout') }}</DropdownMenuLabel>
           <DropdownMenuItem v-for="layout in ARRANGE_LAYOUTS" :key="layout" @select="chooseLayout($event, layout)">
             <Check :class="cn(layout !== arrangeLayout && 'invisible')" />
-            {{ ARRANGE_LAYOUT_LABELS[layout] }}
+            {{ t(`arrange.layouts.${layout}`) }}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuLabel>放在</DropdownMenuLabel>
+          <DropdownMenuLabel>{{ t('arrange.placeAt') }}</DropdownMenuLabel>
           <DropdownMenuItem v-for="anchor in ARRANGE_ANCHORS" :key="anchor" @select="arrange(anchor)">
             <component :is="ANCHOR_ICONS[anchor]" />
-            {{ ARRANGE_ANCHOR_LABELS[anchor] }}
-            <span v-if="anchor === arrangeAnchor" class="ml-auto text-[10px] text-muted-foreground">上次</span>
+            {{ t(`arrange.anchors.${anchor}`) }}
+            <span v-if="anchor === arrangeAnchor" class="ml-auto text-[10px] text-muted-foreground">{{ t('arrange.lastUsed') }}</span>
           </DropdownMenuItem>
         </DropdownMenuSubContent>
       </DropdownMenuSub>
@@ -140,42 +144,54 @@ function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent
         <span class="flex size-3.5 items-center justify-center rounded-[3px] border border-input">
           <Check v-if="pinnedTranslucent" class="size-3! text-foreground!" />
         </span>
-        置頂便籤未使用時半透明
+        {{ t('menu.translucent') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="keepOpen($event, 'toggle-autostart')">
         <span class="flex size-3.5 items-center justify-center rounded-[3px] border border-input">
           <Check v-if="autostart" class="size-3! text-foreground!" />
         </span>
-        開機時自動啟動
+        {{ t('menu.autostart') }}
       </DropdownMenuItem>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Languages />
+          {{ t('language.title') }}
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent class="w-40">
+          <DropdownMenuItem v-for="option in LANGUAGE_SETTINGS" :key="option" @select="emit('language', option)">
+            <Check :class="cn(option !== language && 'invisible')" />
+            {{ languageName(option) }}
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
       <DropdownMenuItem @select="emit('shortcuts')">
         <Keyboard />
-        自訂快捷鍵…
+        {{ t('menu.shortcuts') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('manage-tags')">
         <Tags />
-        管理標籤…
+        {{ t('menu.manageTags') }}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem @select="emit('sync')">
         <FolderSync />
-        跨裝置同步…
+        {{ t('menu.sync') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('export')">
         <Download />
-        匯出便籤 (JSON)
+        {{ t('menu.export') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('import')">
         <Upload />
-        匯入便籤 (JSON)
+        {{ t('menu.import') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('open-backups')">
         <FolderOpen />
-        開啟自動備份資料夾
+        {{ t('menu.openBackups') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('cleanup-images')">
         <ImageOff />
-        清理未使用的圖片
+        {{ t('menu.cleanupImages') }}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

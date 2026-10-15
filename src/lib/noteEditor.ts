@@ -8,6 +8,7 @@ import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
 
+import { t } from '@/i18n'
 import { NOTE_LINK_SCHEME } from '@/utils/noteLinks'
 
 export interface NoteEditorOptions {
@@ -61,7 +62,7 @@ export function createNoteExtensions(options: NoteEditorOptions = {}): Extension
         autolink: true,
         defaultProtocol: 'https',
         protocols: [NOTE_LINK_SCHEME],
-        HTMLAttributes: { rel: 'noopener noreferrer nofollow', title: 'Ctrl+點擊開啟' },
+        HTMLAttributes: { rel: 'noopener noreferrer nofollow', title: t('note.linkTitle') },
       },
     }),
     TaskList,

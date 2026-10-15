@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import type { NoteStatus } from '@/models/note'
 
@@ -52,7 +53,7 @@ function deletePermanently(event: Event) {
           'text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:bg-accent data-[state=open]:opacity-100',
         )
       "
-      title="更多動作"
+      :title="t('item.moreActions')"
       @click.stop
       @keydown.enter.stop
     >
@@ -63,43 +64,43 @@ function deletePermanently(event: Event) {
       <template v-if="status === 'active'">
         <DropdownMenuItem @select="emit('open')">
           <ExternalLink />
-          開啟便籤
+          {{ t('item.open') }}
         </DropdownMenuItem>
         <DropdownMenuItem @select="emit('edit-tags')">
           <Tag />
-          編輯標籤…
+          {{ t('common.editTags') }}
         </DropdownMenuItem>
         <DropdownMenuItem @select="emit('archive')">
           <Archive />
-          封存
+          {{ t('common.archive') }}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" @select="emit('delete')">
           <Trash2 />
-          移到垃圾桶
+          {{ t('common.moveToTrash') }}
         </DropdownMenuItem>
       </template>
 
       <template v-else-if="status === 'archived'">
         <DropdownMenuItem @select="emit('restore')">
           <ArchiveRestore />
-          取消封存
+          {{ t('common.unarchive') }}
         </DropdownMenuItem>
         <DropdownMenuItem @select="emit('edit-tags')">
           <Tag />
-          編輯標籤…
+          {{ t('common.editTags') }}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" @select="emit('delete')">
           <Trash2 />
-          移到垃圾桶
+          {{ t('common.moveToTrash') }}
         </DropdownMenuItem>
       </template>
 
       <template v-else>
         <DropdownMenuItem @select="emit('restore')">
           <RotateCcw />
-          恢復
+          {{ t('common.restore') }}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -108,7 +109,7 @@ function deletePermanently(event: Event) {
           @select="deletePermanently"
         >
           <Trash2 />
-          {{ confirming ? '再按一次確認刪除' : '永久刪除' }}
+          {{ confirming ? t('common.confirmDeletePermanently') : t('common.deletePermanently') }}
         </DropdownMenuItem>
       </template>
     </DropdownMenuContent>

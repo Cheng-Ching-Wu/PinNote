@@ -22,6 +22,7 @@ import {
 
 import NoteTableMenu from '@/components/note/NoteTableMenu.vue'
 import { useHorizontalOverflow } from '@/composables/useHorizontalOverflow'
+import { type MessageKey, t } from '@/i18n'
 import { toggleMergedCodeBlock } from '@/lib/noteEditor'
 import { cn } from '@/lib/utils'
 import { IMAGE_MIME_TYPES } from '@/services/imageService'
@@ -59,7 +60,7 @@ function onFilesPicked(event: Event) {
 }
 
 interface ToolbarItem {
-  title: string
+  title: MessageKey
   icon: Component
   isActive: () => boolean
   run: () => void
@@ -69,22 +70,22 @@ const chain = () => props.editor.chain().focus()
 
 /** `null` renders a separator. */
 const items: (ToolbarItem | null)[] = [
-  { title: '粗體 (Ctrl+B)', icon: Bold, isActive: () => props.editor.isActive('bold'), run: () => chain().toggleBold().run() },
-  { title: '斜體 (Ctrl+I)', icon: Italic, isActive: () => props.editor.isActive('italic'), run: () => chain().toggleItalic().run() },
-  { title: '底線 (Ctrl+U)', icon: Underline, isActive: () => props.editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
-  { title: '刪除線 (Ctrl+Shift+S)', icon: Strikethrough, isActive: () => props.editor.isActive('strike'), run: () => chain().toggleStrike().run() },
-  { title: '螢光標記 (Ctrl+Shift+H)', icon: Highlighter, isActive: () => props.editor.isActive('highlight'), run: () => chain().toggleHighlight().run() },
+  { title: 'toolbar.bold', icon: Bold, isActive: () => props.editor.isActive('bold'), run: () => chain().toggleBold().run() },
+  { title: 'toolbar.italic', icon: Italic, isActive: () => props.editor.isActive('italic'), run: () => chain().toggleItalic().run() },
+  { title: 'toolbar.underline', icon: Underline, isActive: () => props.editor.isActive('underline'), run: () => chain().toggleUnderline().run() },
+  { title: 'toolbar.strike', icon: Strikethrough, isActive: () => props.editor.isActive('strike'), run: () => chain().toggleStrike().run() },
+  { title: 'toolbar.highlight', icon: Highlighter, isActive: () => props.editor.isActive('highlight'), run: () => chain().toggleHighlight().run() },
   null,
-  { title: '標題 1（# 空白）', icon: Heading1, isActive: () => props.editor.isActive('heading', { level: 1 }), run: () => chain().toggleHeading({ level: 1 }).run() },
-  { title: '標題 2（## 空白）', icon: Heading2, isActive: () => props.editor.isActive('heading', { level: 2 }), run: () => chain().toggleHeading({ level: 2 }).run() },
+  { title: 'toolbar.heading1', icon: Heading1, isActive: () => props.editor.isActive('heading', { level: 1 }), run: () => chain().toggleHeading({ level: 1 }).run() },
+  { title: 'toolbar.heading2', icon: Heading2, isActive: () => props.editor.isActive('heading', { level: 2 }), run: () => chain().toggleHeading({ level: 2 }).run() },
   null,
-  { title: '項目清單（- 空白）', icon: List, isActive: () => props.editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
-  { title: '編號清單（1. 空白）', icon: ListOrdered, isActive: () => props.editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
-  { title: '核取清單（[ ] 空白）', icon: ListChecks, isActive: () => props.editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
+  { title: 'toolbar.bulletList', icon: List, isActive: () => props.editor.isActive('bulletList'), run: () => chain().toggleBulletList().run() },
+  { title: 'toolbar.orderedList', icon: ListOrdered, isActive: () => props.editor.isActive('orderedList'), run: () => chain().toggleOrderedList().run() },
+  { title: 'toolbar.taskList', icon: ListChecks, isActive: () => props.editor.isActive('taskList'), run: () => chain().toggleTaskList().run() },
   null,
-  { title: '行內程式碼：套用到選取文字 (Ctrl+E)', icon: Code, isActive: () => props.editor.isActive('code'), run: () => chain().toggleCode().run() },
-  { title: '程式碼區塊：整段（```）', icon: SquareCode, isActive: () => props.editor.isActive('codeBlock'), run: () => toggleMergedCodeBlock(props.editor) },
-  { title: '引用（> 空白）', icon: TextQuote, isActive: () => props.editor.isActive('blockquote'), run: () => chain().toggleBlockquote().run() },
+  { title: 'toolbar.code', icon: Code, isActive: () => props.editor.isActive('code'), run: () => chain().toggleCode().run() },
+  { title: 'toolbar.codeBlock', icon: SquareCode, isActive: () => props.editor.isActive('codeBlock'), run: () => toggleMergedCodeBlock(props.editor) },
+  { title: 'toolbar.blockquote', icon: TextQuote, isActive: () => props.editor.isActive('blockquote'), run: () => chain().toggleBlockquote().run() },
 ]
 </script>
 
@@ -104,7 +105,7 @@ const items: (ToolbarItem | null)[] = [
       v-if="barHovered && canScrollLeft"
       type="button"
       :class="cn(arrowClass, 'left-1')"
-      title="向左捲動工具列"
+      :title="t('toolbar.scrollLeft')"
       @pointerenter="startAutoScroll(-1)"
       @pointerleave="stopAutoScroll"
       @click="scrollByPage(-1)"
@@ -121,7 +122,7 @@ const items: (ToolbarItem | null)[] = [
         <button
           v-else
           type="button"
-          :title="item.title"
+          :title="t(item.title)"
           :class="cn(buttonClass, item.isActive() && activeClass)"
           @click="item.run()"
         >
@@ -131,7 +132,7 @@ const items: (ToolbarItem | null)[] = [
 
       <span :class="separatorClass" />
       <NoteTableMenu :editor="editor" :button-class="buttonClass" :active-class="activeClass" />
-      <button type="button" :class="buttonClass" title="插入圖片（也可直接貼上或拖曳圖片）" @click="fileInput?.click()">
+      <button type="button" :class="buttonClass" :title="t('toolbar.image')" @click="fileInput?.click()">
         <ImagePlus class="size-3.5" />
       </button>
     </div>
@@ -140,7 +141,7 @@ const items: (ToolbarItem | null)[] = [
       v-if="barHovered && canScrollRight"
       type="button"
       :class="cn(arrowClass, 'right-1')"
-      title="向右捲動工具列"
+      :title="t('toolbar.scrollRight')"
       @pointerenter="startAutoScroll(1)"
       @pointerleave="stopAutoScroll"
       @click="scrollByPage(1)"

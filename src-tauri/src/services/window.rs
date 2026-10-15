@@ -6,6 +6,7 @@ use tauri::{
 };
 
 use crate::error::AppResult;
+use crate::i18n::pick;
 use crate::models::{Note, NoteUpdate};
 use crate::state::AppState;
 
@@ -18,6 +19,17 @@ const NOTE_LABEL_PREFIX: &str = "note-";
 pub const COLLAPSED_HEIGHT: f64 = 32.0;
 pub const MIN_WIDTH: f64 = 180.0;
 pub const MIN_HEIGHT: f64 = 96.0;
+
+fn search_title() -> &'static str {
+    pick("PinNote 搜尋", "PinNote Search")
+}
+
+/// Window titles set in Rust follow a language change (the pages translate themselves).
+pub fn refresh_titles(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window(SEARCH_LABEL) {
+        let _ = window.set_title(search_title());
+    }
+}
 
 pub fn note_label(id: &str) -> String {
     format!("{NOTE_LABEL_PREFIX}{id}")
@@ -64,7 +76,7 @@ pub fn toggle_search_window(app: &AppHandle) -> AppResult<()> {
     }
 
     WebviewWindowBuilder::new(app, SEARCH_LABEL, WebviewUrl::App("index.html".into()))
-        .title("PinNote 搜尋")
+        .title(search_title())
         .inner_size(520.0, 380.0)
         .decorations(false)
         .shadow(true)

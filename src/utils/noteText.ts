@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import type { Note } from '@/models/note'
 import { markdownToPlainText } from '@/utils/markdown'
 
@@ -29,7 +30,7 @@ export function noteLines(note: Pick<Note, 'content'>): string[] {
 
 /** Untitled notes use their first line as the heading, like Windows Sticky Notes. */
 export function noteHeading(note: Pick<Note, 'title' | 'content'>, lines = noteLines(note)): string {
-  return note.title.trim() || lines[0] || '空白便籤'
+  return note.title.trim() || lines[0] || t('note.emptyHeading')
 }
 
 /** Content after the heading, joined on one line. */

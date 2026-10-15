@@ -23,7 +23,9 @@ async function bootstrap() {
     : { name: windowService.isSearchWindow() ? 'search' : 'main' }
   await router.replace(route)
 
-  await Promise.all([useNoteStore().startSync(), useSettingsStore().startSync(), imageService.init()])
+  // Settings first so the window opens in the chosen language.
+  const settings = useSettingsStore()
+  await Promise.all([useNoteStore().startSync(), settings.startSync(), settings.loadSettings(), imageService.init()])
   await router.isReady()
   app.mount('#app')
 }

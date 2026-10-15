@@ -5,6 +5,7 @@ import { Archive, CornerDownLeft, Plus, Search } from 'lucide-vue-next'
 import TagChip from '@/components/tags/TagChip.vue'
 import { useTagColors } from '@/composables/useTagColors'
 import { NOTE_COLOR_CLASSES } from '@/constants/noteColors'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import type { Note } from '@/models/note'
 import { windowService } from '@/services/windowService'
@@ -111,7 +112,7 @@ onBeforeUnmount(() => cleanups.forEach((cleanup) => cleanup()))
       <input
         ref="inputRef"
         v-model="query"
-        placeholder="搜尋便籤，或輸入 #標籤"
+        :placeholder="t('search.placeholder')"
         spellcheck="false"
         class="h-12 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
       />
@@ -139,10 +140,10 @@ onBeforeUnmount(() => cleanups.forEach((cleanup) => cleanup()))
             <span
               v-if="result.note.status === 'archived'"
               class="inline-flex shrink-0 items-center gap-0.5 text-[11px] text-muted-foreground"
-              title="選擇後會取消封存並開啟"
+              :title="t('search.archivedTitle')"
             >
               <Archive class="size-3" />
-              封存
+              {{ t('common.archive') }}
             </span>
           </div>
           <p v-if="result.snippet" class="truncate text-xs text-muted-foreground">{{ result.snippet }}</p>
@@ -172,20 +173,20 @@ onBeforeUnmount(() => cleanups.forEach((cleanup) => cleanup()))
         @click="create"
       >
         <Plus class="size-3.5 shrink-0 text-muted-foreground" />
-        <span class="truncate">新增便籤「{{ newTitle }}」</span>
+        <span class="truncate">{{ t('common.newNoteNamed', { title: newTitle }) }}</span>
         <span class="ml-auto shrink-0 text-[11px] text-muted-foreground">Ctrl+Enter</span>
       </li>
 
       <li v-if="rowCount === 0" class="py-10 text-center text-xs text-muted-foreground">
-        {{ query.trim() ? '找不到符合的便籤' : '還沒有便籤' }}
+        {{ query.trim() ? t('common.noMatches') : t('search.noNotes') }}
       </li>
     </ul>
 
     <footer class="flex gap-3 border-t px-3.5 py-1.5 text-[11px] text-muted-foreground">
-      <span>↑↓ 選擇</span>
-      <span>Enter 開啟</span>
-      <span>Esc 關閉</span>
-      <span v-if="!query.trim()" class="ml-auto">顯示最近修改的便籤</span>
+      <span>{{ t('search.navigate') }}</span>
+      <span>{{ t('search.open') }}</span>
+      <span>{{ t('search.close') }}</span>
+      <span v-if="!query.trim()" class="ml-auto">{{ t('search.recent') }}</span>
     </footer>
   </div>
 </template>

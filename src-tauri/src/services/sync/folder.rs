@@ -22,6 +22,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::error::AppResult;
 use crate::models::{SyncedNote, Tombstone};
+use crate::tr;
 
 pub const FOLDER_NAME: &str = "PinNote Sync";
 
@@ -117,12 +118,20 @@ impl SyncFolder {
             let note = match read_cached(&path, cache) {
                 Ok(note) => note.normalized(),
                 Err(err) => {
-                    warnings.push(format!("無法讀取 {}：{err}", display_name(&path)));
+                    warnings.push(tr!(
+                        "無法讀取 {}：{err}",
+                        "Could not read {}: {err}",
+                        display_name(&path)
+                    ));
                     continue;
                 }
             };
             if !is_safe_id(&note.id) {
-                warnings.push(format!("略過無效的便籤檔 {}", display_name(&path)));
+                warnings.push(tr!(
+                    "略過無效的便籤檔 {}",
+                    "Skipped an invalid note file {}",
+                    display_name(&path)
+                ));
                 continue;
             }
             let entry = notes.entry(note.id.clone()).or_default();
@@ -163,8 +172,16 @@ impl SyncFolder {
                         *entry = t.deleted_at;
                     }
                 }
-                Ok(_) => warnings.push(format!("略過無效的刪除紀錄 {}", display_name(&path))),
-                Err(err) => warnings.push(format!("無法讀取 {}：{err}", display_name(&path))),
+                Ok(_) => warnings.push(tr!(
+                    "略過無效的刪除紀錄 {}",
+                    "Skipped an invalid deletion record {}",
+                    display_name(&path)
+                )),
+                Err(err) => warnings.push(tr!(
+                    "無法讀取 {}：{err}",
+                    "Could not read {}: {err}",
+                    display_name(&path)
+                )),
             }
         }
         Ok(tombstones)

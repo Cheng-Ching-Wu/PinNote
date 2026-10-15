@@ -19,7 +19,13 @@ pub enum AppError {
 
     /// The sync folder used before is gone (deleted, or the drive moved it).
     /// Sync pauses instead of silently starting over in an empty folder.
-    #[error("同步資料夾不見了，已暫停同步")]
+    #[error(
+        "{}",
+        crate::i18n::pick(
+            "同步資料夾不見了，已暫停同步",
+            "The sync folder is missing, so sync is paused"
+        )
+    )]
     SyncFolderMissing,
 
     #[error("{0}")]

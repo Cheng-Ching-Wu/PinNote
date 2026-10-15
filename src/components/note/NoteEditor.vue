@@ -5,6 +5,7 @@ import { EditorContent, useEditor } from '@tiptap/vue-3'
 import { Archive, Plus, TriangleAlert } from 'lucide-vue-next'
 
 import NoteToolbar from '@/components/note/NoteToolbar.vue'
+import { t } from '@/i18n'
 import { createNoteExtensions } from '@/lib/noteEditor'
 import { cn } from '@/lib/utils'
 import { IMAGE_MIME_TYPES, imageService } from '@/services/imageService'
@@ -52,7 +53,7 @@ async function insertImages(target: Editor, files: File[], pos?: number) {
         pos += 1
       }
     } catch (error) {
-      message.value = `無法加入圖片「${file.name}」：${String(error)}`
+      message.value = t('editor.imageFailed', { name: file.name, error: String(error) })
     }
   }
 }
@@ -173,7 +174,7 @@ const editor = useEditor({
   contentType: 'markdown',
   autofocus: props.autofocus ? 'end' : false,
   extensions: createNoteExtensions({
-    placeholder: '寫點什麼…',
+    placeholder: t('editor.placeholder'),
     resolveImageSrc: imageService.resolveSrc,
     imageMimeTypes: IMAGE_MIME_TYPES,
     onImageFiles: (target, files, pos) => void insertImages(target, files, pos),
@@ -216,7 +217,7 @@ function focusFromBlank(event: MouseEvent) {
 
 async function copyOriginal() {
   await navigator.clipboard.writeText(props.initialContent)
-  message.value = '已複製原始 Markdown'
+  message.value = t('editor.copiedOriginal')
 }
 
 function editAnyway() {
@@ -247,10 +248,10 @@ defineExpose({
     >
       <TriangleAlert class="mt-0.5 size-3.5 shrink-0" />
       <div>
-        這張便籤含有無法在編輯器顯示的內容（例如 HTML），為避免存檔時遺失，目前為唯讀。
+        {{ t('editor.readOnly') }}
         <div class="mt-1 flex gap-3 font-medium">
-          <button type="button" class="underline underline-offset-2" @click="copyOriginal">複製原始內容</button>
-          <button type="button" class="underline underline-offset-2" @click="editAnyway">仍要編輯</button>
+          <button type="button" class="underline underline-offset-2" @click="copyOriginal">{{ t('editor.copyOriginal') }}</button>
+          <button type="button" class="underline underline-offset-2" @click="editAnyway">{{ t('editor.editAnyway') }}</button>
         </div>
       </div>
     </div>
@@ -296,7 +297,7 @@ defineExpose({
         @click="chooseLink(linkTargets.length)"
       >
         <Plus class="size-3 shrink-0" />
-        <span class="truncate">新增便籤「{{ linkNewTitle }}」</span>
+        <span class="truncate">{{ t('common.newNoteNamed', { title: linkNewTitle }) }}</span>
       </li>
     </ul>
 

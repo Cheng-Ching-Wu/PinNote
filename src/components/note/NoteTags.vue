@@ -5,6 +5,7 @@ import { Plus } from 'lucide-vue-next'
 import TagChip from '@/components/tags/TagChip.vue'
 import TagInput from '@/components/tags/TagInput.vue'
 import { useTagColors } from '@/composables/useTagColors'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 
 const props = defineProps<{
@@ -74,7 +75,7 @@ function remove(index: number) {
     <button
       v-else
       type="button"
-      title="新增標籤"
+      :title="t('common.addTag')"
       class="inline-flex size-5 items-center justify-center rounded-full text-note-ink/60 outline-none hover:bg-note-ink/10 hover:text-note-ink focus-visible:bg-note-ink/10"
       @click="editing = true"
     >

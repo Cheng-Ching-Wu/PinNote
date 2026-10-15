@@ -11,6 +11,7 @@ import { useNoteTranslucency } from '@/composables/useNoteTranslucency'
 import { useNoteWindow } from '@/composables/useNoteWindow'
 import { NOTE_COLOR_CLASSES } from '@/constants/noteColors'
 import { CONTENT_SAVE_DELAY } from '@/constants/window'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { syncService } from '@/services/syncService'
 import { windowService } from '@/services/windowService'
@@ -72,8 +73,8 @@ async function createLinkTarget(title: string) {
 async function openLinkedNote(targetId: string) {
   if (!store.loaded) await store.loadNotes()
   const target = store.getById(targetId)
-  if (!target) return editorRef.value?.showMessage('找不到連結的便籤，可能已被永久刪除')
-  if (target.status === 'deleted') return editorRef.value?.showMessage('連結的便籤在垃圾桶中，請先從便籤管理恢復')
+  if (!target) return editorRef.value?.showMessage(t('editor.linkNotFound'))
+  if (target.status === 'deleted') return editorRef.value?.showMessage(t('editor.linkInTrash'))
   if (target.status === 'archived') await store.restoreNote(targetId)
   await store.openNoteWindow(targetId)
 }
@@ -125,7 +126,7 @@ async function onSynced(ids: string[]) {
   }
   init(incoming)
   editorKey.value++
-  editorRef.value?.showMessage('已套用其他裝置的修改')
+  editorRef.value?.showMessage(t('editor.syncedFromOtherDevice'))
 }
 let stopSyncListener: (() => void) | undefined
 

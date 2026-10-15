@@ -2,6 +2,7 @@ use tauri::AppHandle;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppResult;
+use crate::i18n::pick;
 use crate::services::sync::{self, SyncStatus};
 
 #[tauri::command]
@@ -16,7 +17,10 @@ pub async fn choose_sync_folder(app: AppHandle) -> AppResult<Option<SyncStatus>>
     let Some(path) = app
         .dialog()
         .file()
-        .set_title("選擇同步資料夾（例如 Google 雲端硬碟或 OneDrive 裡的資料夾）")
+        .set_title(pick(
+            "選擇同步資料夾（例如 Google 雲端硬碟或 OneDrive 裡的資料夾）",
+            "Choose a sync folder (e.g. a folder in Google Drive or OneDrive)",
+        ))
         .blocking_pick_folder()
     else {
         return Ok(None);

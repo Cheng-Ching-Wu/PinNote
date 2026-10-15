@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
+import { type MessageKey, resolveLocale, setLocale, t } from '@/i18n'
 import { type AppSettings, DEFAULT_SETTINGS } from '@/models/settings'
 import { settingsRepository } from '@/repositories/settingsRepository'
 import { settingsService } from '@/services/settingsService'
@@ -13,27 +14,34 @@ export const useSettingsStore = defineStore('settings', () => {
   const autostart = ref(false)
   const error = ref<string | null>(null)
 
-  async function guard(label: string, task: () => Promise<void>) {
+  // Every window follows the language setting, including changes made in another window.
+  watch(
+    () => settings.value.language,
+    (language) => setLocale(resolveLocale(language)),
+    { immediate: true },
+  )
+
+  async function guard(label: MessageKey, task: () => Promise<void>) {
     try {
       await task()
     } catch (err) {
-      error.value = `${label}: ${String(err)}`
+      error.value = `${t(label)}: ${String(err)}`
       console.error(`[settings-store] ${label}`, err)
     }
   }
 
   const loadSettings = () =>
-    guard('讀取設定失敗', async () => {
+    guard('errors.loadSettings', async () => {
       settings.value = await settingsRepository.getSettings()
     })
 
   const loadAutostart = () =>
-    guard('讀取開機啟動設定失敗', async () => {
+    guard('errors.loadAutostart', async () => {
       autostart.value = await settingsService.getAutostart()
     })
 
   const updateSettings = (data: Partial<AppSettings>) =>
-    guard('儲存設定失敗', async () => {
+    guard('errors.saveSettings', async () => {
       settings.value = { ...settings.value, ...data }
       settings.value = await settingsRepository.updateSettings(data)
     })
@@ -47,11 +55,11 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   const setAutostart = (enabled: boolean) =>
-    guard('變更開機啟動失敗', async () => {
+    guard('errors.setAutostart', async () => {
       autostart.value = await settingsService.setAutostart(enabled)
     })
 
-  const openBackupFolder = () => guard('無法開啟備份資料夾', () => settingsService.openBackupFolder())
+  const openBackupFolder = () => guard('errors.openBackups', () => settingsService.openBackupFolder())
 
   let unsubscribe: (() => void) | null = null
 

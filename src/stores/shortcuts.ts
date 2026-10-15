@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
+import { type MessageKey, t } from '@/i18n'
 import { shortcutService, type ShortcutStatus } from '@/services/shortcutService'
 
 export const useShortcutStore = defineStore('shortcuts', () => {
@@ -8,6 +9,13 @@ export const useShortcutStore = defineStore('shortcuts', () => {
 
   /** Configured but not registered (e.g. owned by another app). */
   const failed = computed(() => statuses.value.filter((s) => s.accelerator && !s.registered))
+
+  /** Translated here rather than in Rust, so it follows a language change right away. */
+  function labelOf(status: ShortcutStatus): string {
+    const key = `shortcuts.actions.${status.action}` as MessageKey
+    const label = t(key)
+    return label === key ? status.label : label
+  }
 
   async function load() {
     statuses.value = await shortcutService.getStatus().catch(() => [])
@@ -37,5 +45,5 @@ export const useShortcutStore = defineStore('shortcuts', () => {
     statuses.value = await shortcutService.setPaused(false).catch(() => statuses.value)
   }
 
-  return { statuses, failed, load, set, pause, resume }
+  return { statuses, failed, labelOf, load, set, pause, resume }
 })

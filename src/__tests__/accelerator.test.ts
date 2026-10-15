@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { setLocale } from '@/i18n'
 import { formatAccelerator, recordAccelerator } from '@/utils/accelerator'
 
 const key = (code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey', boolean>> = {}) => ({
@@ -49,6 +50,9 @@ describe('formatAccelerator', () => {
   it('shows friendly names', () => {
     expect(formatAccelerator('Ctrl+Super+ArrowUp')).toBe('Ctrl + Win + ↑')
     expect(formatAccelerator('F15')).toBe('F15')
+    setLocale('zh-TW')
     expect(formatAccelerator('')).toBe('未設定')
+    setLocale('en')
+    expect(formatAccelerator('')).toBe('Not set')
   })
 })

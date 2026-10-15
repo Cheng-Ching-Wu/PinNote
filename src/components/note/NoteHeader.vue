@@ -2,6 +2,7 @@
 import { Minus, Pin, PinOff, Plus, X } from 'lucide-vue-next'
 
 import NoteMenu from '@/components/note/NoteMenu.vue'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import type { NoteColor } from '@/models/note'
 
@@ -47,7 +48,7 @@ const onHover = 'opacity-0 transition-opacity group-hover/note:opacity-100 focus
   >
     <input
       v-model="title"
-      placeholder="標題"
+      :placeholder="t('noteHeader.titlePlaceholder')"
       spellcheck="false"
       class="h-6 max-w-[62%] min-w-12 truncate bg-transparent text-[13px] font-semibold text-note-ink outline-none [field-sizing:content] placeholder:font-normal placeholder:text-note-ink/40"
       @keydown.enter.prevent="emit('title-enter')"
@@ -70,7 +71,7 @@ const onHover = 'opacity-0 transition-opacity group-hover/note:opacity-100 focus
 
     <button
       type="button"
-      :title="alwaysOnTop ? '取消置頂' : '置頂'"
+      :title="alwaysOnTop ? t('noteHeader.unpin') : t('noteHeader.pin')"
       :class="cn(iconButton, !alwaysOnTop && onHover, alwaysOnTop && 'text-note-ink')"
       @click="emit('toggle-pin')"
     >
@@ -80,7 +81,7 @@ const onHover = 'opacity-0 transition-opacity group-hover/note:opacity-100 focus
 
     <button
       type="button"
-      :title="collapsed ? '展開' : '收合'"
+      :title="collapsed ? t('noteHeader.expand') : t('noteHeader.collapse')"
       :class="iconButton"
       @click="emit('toggle-collapse')"
     >
@@ -88,7 +89,7 @@ const onHover = 'opacity-0 transition-opacity group-hover/note:opacity-100 focus
       <Minus v-else class="size-3.5" />
     </button>
 
-    <button type="button" title="關閉視窗（不會刪除）" :class="iconButton" @click="emit('close')">
+    <button type="button" :title="t('noteHeader.close')" :class="iconButton" @click="emit('close')">
       <X class="size-3.5" />
     </button>
   </header>

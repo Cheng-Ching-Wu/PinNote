@@ -4,7 +4,8 @@ import { Archive, ArchiveRestore, Palette, RotateCcw, Tag, Trash2, X } from 'luc
 
 import { Button, buttonVariants } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { NOTE_COLOR_CLASSES, NOTE_COLOR_LABELS, NOTE_COLORS } from '@/constants/noteColors'
+import { NOTE_COLOR_CLASSES, NOTE_COLORS } from '@/constants/noteColors'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import type { NoteColor, NoteStatus } from '@/models/note'
 
@@ -49,16 +50,16 @@ const action = cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'h-7 px-2 te
   <div class="border-t bg-card px-3 py-2">
     <div class="flex items-center gap-2 text-xs">
       <span class="font-medium tabular-nums">
-        {{ count > 0 ? `已選取 ${count} 張` : '點擊便籤以選取' }}
+        {{ count > 0 ? t('batch.selected', { count }) : t('batch.clickToSelect') }}
       </span>
       <button
         type="button"
         class="shrink-0 text-muted-foreground underline-offset-2 hover:underline"
         @click="allSelected ? emit('clear') : emit('select-all')"
       >
-        {{ allSelected ? '取消全選' : '全選' }}
+        {{ allSelected ? t('batch.deselectAll') : t('batch.selectAll') }}
       </button>
-      <Button variant="ghost" size="icon-xs" title="結束批次操作 (Esc)" class="ml-auto" @click="emit('exit')">
+      <Button variant="ghost" size="icon-xs" :title="t('batch.exit')" class="ml-auto" @click="emit('exit')">
         <X class="size-3.5" />
       </Button>
     </div>
@@ -67,9 +68,9 @@ const action = cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'h-7 px-2 te
     <fieldset :disabled="count === 0" class="mt-1.5 flex flex-wrap items-center gap-0.5 disabled:opacity-50">
       <template v-if="status !== 'deleted'">
         <DropdownMenu :modal="false">
-          <DropdownMenuTrigger :class="cn(action, 'data-[state=open]:bg-accent')" title="變更顏色">
+          <DropdownMenuTrigger :class="cn(action, 'data-[state=open]:bg-accent')" :title="t('common.changeColor')">
             <Palette class="size-3.5" />
-            顏色
+            {{ t('batch.color') }}
           </DropdownMenuTrigger>
           <DropdownMenuContent class="w-auto" align="start" side="top">
             <div class="flex items-center gap-2 p-1.5">
@@ -77,7 +78,7 @@ const action = cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'h-7 px-2 te
                 v-for="option in NOTE_COLORS"
                 :key="option"
                 type="button"
-                :title="NOTE_COLOR_LABELS[option]"
+                :title="t(`note.colors.${option}`)"
                 :class="
                   cn(
                     NOTE_COLOR_CLASSES[option],
@@ -91,15 +92,15 @@ const action = cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'h-7 px-2 te
         </DropdownMenu>
         <button type="button" :class="action" @click="emit('tags')">
           <Tag class="size-3.5" />
-          標籤
+          {{ t('common.tags') }}
         </button>
         <button v-if="status === 'active'" type="button" :class="action" @click="emit('archive')">
           <Archive class="size-3.5" />
-          封存
+          {{ t('common.archive') }}
         </button>
         <button v-else type="button" :class="action" @click="emit('restore')">
           <ArchiveRestore class="size-3.5" />
-          取消封存
+          {{ t('common.unarchive') }}
         </button>
         <button
           type="button"
@@ -107,14 +108,14 @@ const action = cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'h-7 px-2 te
           @click="emit('delete')"
         >
           <Trash2 class="size-3.5" />
-          移到垃圾桶
+          {{ t('common.moveToTrash') }}
         </button>
       </template>
 
       <template v-else>
         <button type="button" :class="action" @click="emit('restore')">
           <RotateCcw class="size-3.5" />
-          恢復
+          {{ t('common.restore') }}
         </button>
         <button
           type="button"
@@ -128,7 +129,7 @@ const action = cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'h-7 px-2 te
           @click="deletePermanently"
         >
           <Trash2 class="size-3.5" />
-          {{ confirming ? '再按一次確認刪除' : '永久刪除' }}
+          {{ confirming ? t('common.confirmDeletePermanently') : t('common.deletePermanently') }}
         </button>
       </template>
     </fieldset>

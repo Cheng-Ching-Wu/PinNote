@@ -4,6 +4,8 @@
  * Validation mirrors `parse_accelerator` in `src-tauri/src/services/shortcut.rs`.
  */
 
+import { t } from '@/i18n'
+
 export type RecordResult =
   | { kind: 'accelerator'; accelerator: string }
   /** Only modifiers are held so far — keep waiting; `preview` shows them. */
@@ -50,7 +52,7 @@ export function recordAccelerator(event: KeyLike): RecordResult {
 
   const key = keyToken(event.code)
   if (mods.length === 0 && !FUNCTION_KEY.test(key)) {
-    return { kind: 'invalid', reason: '單一按鍵只支援 F1–F24（例如巨集鍵），其他按鍵請搭配 Ctrl / Alt / Shift / Win' }
+    return { kind: 'invalid', reason: t('shortcuts.invalidSingleKey') }
   }
   return { kind: 'accelerator', accelerator: [...mods, key].join('+') }
 }
@@ -72,8 +74,8 @@ function displayToken(token: string): string {
   }
 }
 
-/** "Ctrl+Super+ArrowUp" → "Ctrl + Win + ↑"; "" → "未設定". */
+/** "Ctrl+Super+ArrowUp" → "Ctrl + Win + ↑"; "" → "未設定" / "Not set". */
 export function formatAccelerator(accelerator: string): string {
-  if (!accelerator) return '未設定'
+  if (!accelerator) return t('common.notSet')
   return accelerator.split('+').map(displayToken).join(' + ')
 }

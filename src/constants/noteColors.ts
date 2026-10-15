@@ -15,11 +15,3 @@ export const NOTE_COLOR_CLASSES: Record<NoteColor, string> = {
   pink: 'note-pink',
   gray: 'note-gray',
 }
-
-export const NOTE_COLOR_LABELS: Record<NoteColor, string> = {
-  yellow: '黃色',
-  blue: '藍色',
-  green: '綠色',
-  pink: '粉紅',
-  gray: '灰色',
-}

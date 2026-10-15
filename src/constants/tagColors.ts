@@ -17,18 +17,6 @@ export const TAG_COLOR_VALUES: Record<TagColor, string> = {
   gray: '#8b8d98',
 }
 
-export const TAG_COLOR_LABELS: Record<TagColor, string> = {
-  red: '紅色',
-  orange: '橘色',
-  yellow: '黃色',
-  green: '綠色',
-  teal: '青色',
-  blue: '藍色',
-  violet: '紫色',
-  pink: '粉紅',
-  gray: '灰色',
-}
-
 export function isTagColor(value: string | undefined): value is TagColor {
   return !!value && (TAG_COLORS as readonly string[]).includes(value)
 }

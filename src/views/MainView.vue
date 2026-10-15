@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useListReorder } from '@/composables/useListReorder'
+import { t } from '@/i18n'
 import { useNoteSelection } from '@/composables/useNoteSelection'
 import type { Note, NoteStatus } from '@/models/note'
 import { matchesQuery, useNoteStore } from '@/stores/note'
@@ -50,10 +51,10 @@ const syncDialogOpen = ref(false)
 
 const syncTitle = computed(() => {
   const status = sync.status
-  if (status.running) return '同步中…'
-  if (status.folderMissing) return '同步資料夾不見了，已暫停同步'
-  if (status.lastError) return `同步失敗：${status.lastError}`
-  return status.lastSyncAt ? `已同步（${formatNoteTime(status.lastSyncAt)}）` : '等待同步'
+  if (status.running) return t('sync.syncing')
+  if (status.folderMissing) return t('sync.folderMissing')
+  if (status.lastError) return t('sync.failed', { error: status.lastError })
+  return status.lastSyncAt ? t('sync.synced', { time: formatNoteTime(status.lastSyncAt) }) : t('sync.waiting')
 })
 
 const errorText = computed(() => store.lastError ?? settings.error)
@@ -71,14 +72,14 @@ const failedShortcuts = computed(() => shortcutStore.failed)
 const shortcutHint = computed(() => {
   const active = shortcutStore.statuses.filter((s) => s.accelerator)
   return active.length
-    ? active.map((s) => `${formatAccelerator(s.accelerator)} ${s.label}`).join(' · ')
-    : '關閉此視窗會縮到系統匣'
+    ? active.map((s) => `${formatAccelerator(s.accelerator)} ${shortcutStore.labelOf(s)}`).join(' · ')
+    : t('shortcuts.trayHint')
 })
 
 const tabs = computed<{ value: Tab; label: string; notes: Note[] }[]>(() => [
-  { value: 'active', label: '全部', notes: store.activeNotes },
-  { value: 'archived', label: '封存', notes: store.archivedNotes },
-  { value: 'deleted', label: '垃圾桶', notes: store.deletedNotes },
+  { value: 'active', label: t('main.tabs.active'), notes: store.activeNotes },
+  { value: 'archived', label: t('main.tabs.archived'), notes: store.archivedNotes },
+  { value: 'deleted', label: t('main.tabs.deleted'), notes: store.deletedNotes },
 ])
 
 // ---- Sorting (the trash is always newest-deleted first) ----
@@ -118,10 +119,8 @@ const visibleNotes = computed(() =>
 const visibleIds = computed(() => visibleNotes.value.map((note) => note.id))
 
 const emptyText = computed(() => {
-  if (query.value.trim() || activeTagFilter.value.size > 0) return '找不到符合的便籤'
-  if (tab.value === 'archived') return '沒有封存的便籤'
-  if (tab.value === 'deleted') return '垃圾桶是空的'
-  return '還沒有便籤，按「新增便籤」開始'
+  if (query.value.trim() || activeTagFilter.value.size > 0) return t('common.noMatches')
+  return t(`main.empty.${tab.value}`)
 })
 
 // ---- Batch mode (multi-select) ----
@@ -198,7 +197,7 @@ onMounted(async () => {
   await sync.startSync((status) => {
     const conflicts = status.lastReport?.conflicts ?? 0
     if (conflicts > 0) {
-      store.notice = `有 ${conflicts} 張便籤在兩台電腦都被修改，已採用較新的內容，較舊的內容保留在「歷史版本」`
+      store.notice = t('notices.syncConflicts', { count: conflicts })
     }
   })
   await shortcutStore.load()
@@ -225,6 +224,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <MainMenu
             :autostart="settings.autostart"
             :pinned-translucent="settings.settings.pinnedTranslucent"
+            :language="settings.settings.language"
             @show-all="store.showAllNotes()"
             @arrange="(layout, anchor) => store.arrangeNotes(layout, anchor)"
             @toggle-hidden="store.toggleNotesHidden()"
@@ -237,21 +237,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             @import="store.importNotes()"
             @open-backups="settings.openBackupFolder()"
             @sync="syncDialogOpen = true"
+            @language="settings.updateSettings({ language: $event })"
           />
           <Button size="sm" @click="store.createNote()">
             <Plus class="size-3.5" />
-            新增便籤
+            {{ t('common.newNote') }}
           </Button>
         </div>
       </div>
 
       <div class="relative">
         <Search class="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input v-model="query" placeholder="搜尋便籤" class="pr-8 pl-8" />
+        <Input v-model="query" :placeholder="t('main.searchPlaceholder')" class="pr-8 pl-8" />
         <button
           v-if="query"
           type="button"
-          title="清除"
+          :title="t('common.clear')"
           class="absolute top-1/2 right-1.5 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent"
           @click="query = ''"
         >
@@ -282,8 +283,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       />
       <template v-else>
         <span class="min-w-0 flex-1 truncate text-[11px] text-muted-foreground tabular-nums">
-          {{ visibleNotes.length }} 張便籤
-          <template v-if="reorderable && visibleNotes.length > 1">· 拖曳即可調整順序</template>
+          {{ t('main.noteCount', { count: visibleNotes.length }) }}
+          <template v-if="reorderable && visibleNotes.length > 1">{{ t('main.dragHint') }}</template>
         </span>
         <!-- Workspace by tag: put just the filtered notes on the desktop. -->
         <Button
@@ -291,20 +292,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           variant="ghost"
           size="sm"
           class="h-6 shrink-0 gap-1 px-1.5 text-[11px] font-normal text-muted-foreground"
-          title="桌面上只顯示目前篩選出的便籤，其他便籤會關閉（可用「顯示全部便籤」叫回）"
+          :title="t('main.showOnlyTitle')"
           @click="store.showOnlyNotes(visibleIds)"
         >
           <MonitorUp class="size-3" />
-          桌面只顯示這些
+          {{ t('main.showOnly') }}
         </Button>
         <NoteSortMenu v-model="sort" />
       </template>
       <label
         class="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] text-muted-foreground select-none"
-        title="開啟後點擊便籤即可選取（Shift+點擊選取範圍、Ctrl+A 全選），一次封存、刪除或修改；Esc 關閉"
+        :title="t('main.batchTitle')"
       >
         <Switch v-model="batchMode" />
-        批次操作
+        {{ t('main.batch') }}
       </label>
     </div>
 
@@ -341,8 +342,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       class="mx-3 mb-2 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs text-amber-900"
     >
       <CloudAlert class="mt-px size-3.5 shrink-0" />
-      <span class="flex-1">同步資料夾不見了，已暫停同步。這台電腦的便籤都還在。</span>
-      <button type="button" class="shrink-0 font-medium hover:underline" @click="syncDialogOpen = true">處理…</button>
+      <span class="flex-1">{{ t('main.syncFolderMissing') }}</span>
+      <button type="button" class="shrink-0 font-medium hover:underline" @click="syncDialogOpen = true">
+        {{ t('main.resolve') }}
+      </button>
     </div>
     <div
       v-if="errorText"
@@ -350,7 +353,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     >
       <CircleAlert class="mt-px size-3.5 shrink-0" />
       <span class="flex-1 break-all">{{ errorText }}</span>
-      <button type="button" class="shrink-0 hover:underline" @click="dismissError">關閉</button>
+      <button type="button" class="shrink-0 hover:underline" @click="dismissError">{{ t('common.close') }}</button>
     </div>
     <div
       v-else-if="store.notice"
@@ -359,7 +362,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       <CircleCheck class="mt-px size-3.5 shrink-0 text-emerald-600" />
       <span class="flex-1 break-all">{{ store.notice }}</span>
       <button type="button" class="shrink-0 text-muted-foreground hover:underline" @click="store.notice = null">
-        關閉
+        {{ t('common.close') }}
       </button>
     </div>
 
@@ -385,8 +388,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         class="text-destructive"
         :title="item.error ?? ''"
       >
-        快捷鍵 {{ formatAccelerator(item.accelerator) }}（{{ item.label }}）註冊失敗，可能已被其他程式占用，
-        <button type="button" class="underline" @click="shortcutDialogOpen = true">更換按鍵</button>
+        {{ t('shortcuts.registerFailed', { keys: formatAccelerator(item.accelerator), action: shortcutStore.labelOf(item) }) }}
+        <button type="button" class="underline" @click="shortcutDialogOpen = true">{{ t('shortcuts.change') }}</button>
       </p>
       <p v-if="failedShortcuts.length === 0" class="truncate" :title="shortcutHint">{{ shortcutHint }}</p>
     </footer>

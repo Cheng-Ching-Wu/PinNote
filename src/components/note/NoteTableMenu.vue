@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 
 const props = defineProps<{ editor: Editor; buttonClass: string; activeClass: string }>()
@@ -31,36 +32,36 @@ function insertTable() {
 <template>
   <!-- Outside a table the button inserts one; inside it opens row / column actions. -->
   <DropdownMenu v-if="editor.isActive('table')" :modal="false">
-    <DropdownMenuTrigger :class="cn(buttonClass, activeClass)" title="表格">
+    <DropdownMenuTrigger :class="cn(buttonClass, activeClass)" :title="t('table.title')">
       <Table class="size-3.5" />
     </DropdownMenuTrigger>
     <DropdownMenuContent class="w-40" side="top" align="start" @close-auto-focus.prevent>
       <DropdownMenuItem @select="chain().addRowAfter().run()">
         <BetweenHorizontalEnd />
-        在下方新增列
+        {{ t('table.addRow') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="chain().addColumnAfter().run()">
         <BetweenVerticalEnd />
-        在右側新增欄
+        {{ t('table.addColumn') }}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem @select="chain().deleteRow().run()">
         <Rows3 />
-        刪除此列
+        {{ t('table.deleteRow') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="chain().deleteColumn().run()">
         <Columns3 />
-        刪除此欄
+        {{ t('table.deleteColumn') }}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem variant="destructive" @select="chain().deleteTable().run()">
         <Trash2 />
-        刪除表格
+        {{ t('table.delete') }}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 
-  <button v-else type="button" :class="buttonClass" title="插入表格" @click="insertTable">
+  <button v-else type="button" :class="buttonClass" :title="t('table.insert')" @click="insertTable">
     <Sheet class="size-3.5" />
   </button>
 </template>

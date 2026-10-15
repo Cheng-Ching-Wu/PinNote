@@ -24,9 +24,11 @@ use tauri::{AppHandle, Manager};
 use crate::database::{note_repository as repo, now, settings_repository, timestamp, Database};
 use crate::error::{AppError, AppResult};
 use crate::events;
+use crate::i18n::pick;
 use crate::image_refs;
 use crate::models::{AppSettingsPatch, NoteStatus, SyncedNote};
 use crate::services::{images, notes, settings, window};
+use crate::tr;
 
 use folder::{copy_atomic, ReadCache, RemoteSettings, SyncFolder};
 use merge::{
@@ -183,7 +185,9 @@ pub fn set_folder(app: &AppHandle, folder: &str) -> AppResult<SyncStatus> {
 pub fn recreate_folder(app: &AppHandle) -> AppResult<SyncStatus> {
     let folder = settings::get(app)?.sync_folder;
     if folder.is_empty() {
-        return Err(AppError::Internal("尚未設定同步資料夾".into()));
+        return Err(AppError::Internal(
+            pick("尚未設定同步資料夾", "No sync folder is set").into(),
+        ));
     }
     SyncFolder::open(Path::new(&folder))?;
     app.state::<Database>()
@@ -262,14 +266,19 @@ fn update_status(app: &AppHandle, change: impl FnOnce(&mut SyncStatus)) {
 fn run(app: &AppHandle) -> AppResult<SyncReport> {
     let folder_path = settings::get(app)?.sync_folder;
     if folder_path.is_empty() {
-        return Err(AppError::Internal("尚未設定同步資料夾".into()));
+        return Err(AppError::Internal(
+            pick("尚未設定同步資料夾", "No sync folder is set").into(),
+        ));
     }
     let folder = SyncFolder::locate(Path::new(&folder_path));
     let mut report = SyncReport::default();
     let db = app.state::<Database>();
     check_folder(&db, &folder).map_err(|err| match err {
         AppError::SyncFolderMissing => err,
-        err => AppError::Internal(format!("無法使用同步資料夾：{err}")),
+        err => AppError::Internal(tr!(
+            "無法使用同步資料夾：{err}",
+            "Cannot use the sync folder: {err}"
+        )),
     })?;
 
     // 1–3. Read both sides, decide per note, apply to the database.
@@ -308,7 +317,9 @@ fn run(app: &AppHandle) -> AppResult<SyncReport> {
     let settings_result = sync_settings(app, &folder);
     sync.applying.store(false, Ordering::SeqCst);
     if let Err(err) = settings_result {
-        report.warnings.push(format!("無法同步設定：{err}"));
+        report
+            .warnings
+            .push(tr!("無法同步設定：{err}", "Could not sync settings: {err}"));
     }
 
     // 6. Write the folder, then remember what was agreed for each note that made it.
@@ -317,7 +328,10 @@ fn run(app: &AppHandle) -> AppResult<SyncReport> {
     // 7. Old tombstones: every device has had months to see them.
     let cutoff = timestamp(Utc::now() - Duration::days(TOMBSTONE_DAYS));
     if let Err(err) = folder.purge_tombstones(&cutoff) {
-        report.warnings.push(format!("無法清理刪除紀錄：{err}"));
+        report.warnings.push(tr!(
+            "無法清理刪除紀錄：{err}",
+            "Could not clean up deletion records: {err}"
+        ));
     }
     db.with_conn(|conn| repo::purge_tombstones(conn, &cutoff))?;
 
@@ -369,9 +383,10 @@ fn plan_and_apply(
     for id in ids {
         // Ids become file names; an imported note could carry anything.
         if !folder::is_safe_id(id) {
-            report
-                .warnings
-                .push(format!("略過 id 無法作為檔名的便籤：{id}"));
+            report.warnings.push(tr!(
+                "略過 id 無法作為檔名的便籤：{id}",
+                "Skipped a note whose id can't be a file name: {id}"
+            ));
             continue;
         }
         let remote_entry = remote_notes.get(id);
@@ -518,12 +533,18 @@ fn write_folder(
             Ok(()) => {
                 for path in duplicates {
                     if let Err(err) = folder.remove_file(&path) {
-                        report.warnings.push(format!("無法刪除衝突副本：{err}"));
+                        report.warnings.push(tr!(
+                            "無法刪除衝突副本：{err}",
+                            "Could not delete a conflict copy: {err}"
+                        ));
                     }
                 }
                 base_updates.push((id, plan.base));
             }
-            Err(err) => report.warnings.push(format!("無法寫入便籤 {id}：{err}")),
+            Err(err) => report.warnings.push(tr!(
+                "無法寫入便籤 {id}：{err}",
+                "Could not write note {id}: {err}"
+            )),
         }
     }
     db.with_conn(|conn| {
@@ -563,7 +584,10 @@ fn sync_images(
         };
         match result {
             Ok(n) => copied += n,
-            Err(err) => warnings.push(format!("無法同步圖片 {name}：{err}")),
+            Err(err) => warnings.push(tr!(
+                "無法同步圖片 {name}：{err}",
+                "Could not sync image {name}: {err}"
+            )),
         }
     }
     Ok(copied)

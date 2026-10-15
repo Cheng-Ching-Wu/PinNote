@@ -6,6 +6,10 @@ const PINNED_TRANSLUCENT: &str = "pinned_translucent";
 const TAG_COLORS: &str = "tag_colors";
 const TRASH_RETENTION_DAYS: &str = "trash_retention_days";
 const SYNC_FOLDER: &str = "sync_folder";
+const LANGUAGE: &str = "language";
+
+/// Follow the OS language (see `crate::i18n`).
+pub const DEFAULT_LANGUAGE: &str = "system";
 
 /// Notes stay in the trash this many days before being deleted for good.
 pub const DEFAULT_TRASH_RETENTION_DAYS: u32 = 30;
@@ -25,6 +29,8 @@ pub struct AppSettings {
     pub trash_retention_days: u32,
     /// Folder shared through a cloud drive; "" = sync off. Per device, never synced itself.
     pub sync_folder: String,
+    /// "system" | "zh-TW" | "en". Per device, never synced.
+    pub language: String,
 }
 
 impl Default for AppSettings {
@@ -34,6 +40,7 @@ impl Default for AppSettings {
             tag_colors: TagColors::new(),
             trash_retention_days: DEFAULT_TRASH_RETENTION_DAYS,
             sync_folder: String::new(),
+            language: DEFAULT_LANGUAGE.into(),
         }
     }
 }
@@ -54,6 +61,7 @@ impl AppSettings {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(defaults.trash_retention_days),
             sync_folder: map.get(SYNC_FOLDER).cloned().unwrap_or_default(),
+            language: map.get(LANGUAGE).cloned().unwrap_or(defaults.language),
         }
     }
 }
@@ -67,6 +75,7 @@ pub struct AppSettingsPatch {
     pub tag_colors: Option<TagColors>,
     pub trash_retention_days: Option<u32>,
     pub sync_folder: Option<String>,
+    pub language: Option<String>,
 }
 
 impl AppSettingsPatch {
@@ -84,6 +93,9 @@ impl AppSettingsPatch {
         }
         if let Some(folder) = &self.sync_folder {
             entries.push((SYNC_FOLDER, folder.clone()));
+        }
+        if let Some(language) = &self.language {
+            entries.push((LANGUAGE, language.clone()));
         }
         entries
     }

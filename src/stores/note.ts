@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import type { ArrangeAnchor, ArrangeLayout } from '@/constants/arrange'
+import { type MessageKey, t } from '@/i18n'
 import type { Note, NoteColor, NoteUpdate } from '@/models/note'
 import { noteRepository } from '@/repositories/noteRepository'
 import { imageService } from '@/services/imageService'
@@ -54,18 +55,18 @@ export const useNoteStore = defineStore('note', () => {
   }
 
   /** Runs a repository call; errors are recorded instead of crashing the UI. */
-  async function run<T>(label: string, task: () => Promise<T>): Promise<T | undefined> {
+  async function run<T>(label: MessageKey, task: () => Promise<T>): Promise<T | undefined> {
     try {
       return await task()
     } catch (error) {
-      lastError.value = `${label}: ${String(error)}`
+      lastError.value = `${t(label)}: ${String(error)}`
       console.error(`[note-store] ${label}`, error)
       return undefined
     }
   }
 
   async function loadNotes() {
-    const list = await run('載入便籤失敗', () => noteRepository.getNotes())
+    const list = await run('errors.loadNotes', () => noteRepository.getNotes())
     if (list) {
       notes.value = list
       loaded.value = true
@@ -73,14 +74,14 @@ export const useNoteStore = defineStore('note', () => {
   }
 
   async function loadNote(id: string) {
-    const note = await run('載入便籤失敗', () => noteRepository.getNote(id))
+    const note = await run('errors.loadNotes', () => noteRepository.getNote(id))
     if (note) upsert(note)
     return note
   }
 
   /** Creates a note, opens its window and lets it take focus. */
   async function createNote() {
-    const note = await run('新增便籤失敗', () => noteRepository.createNote())
+    const note = await run('errors.createNote', () => noteRepository.createNote())
     if (!note) return undefined
     upsert(note)
     await openNoteWindow(note.id)
@@ -92,9 +93,9 @@ export const useNoteStore = defineStore('note', () => {
    * window loads it. With `open: false` the note stays off the desktop.
    */
   async function createNoteWithTitle(title: string, { open = true } = {}) {
-    const created = await run('新增便籤失敗', () => noteRepository.createNote())
+    const created = await run('errors.createNote', () => noteRepository.createNote())
     if (!created) return undefined
-    const note = (await run('新增便籤失敗', () => noteRepository.updateNote(created.id, { title }))) ?? created
+    const note = (await run('errors.createNote', () => noteRepository.updateNote(created.id, { title }))) ?? created
     upsert(note)
     if (open) await openNoteWindow(note.id)
     else await closeNoteWindow(note.id) // records `isOpen = false` (no window exists)
@@ -102,15 +103,15 @@ export const useNoteStore = defineStore('note', () => {
   }
 
   function addRevision(id: string, title: string, content: string) {
-    return run('保留版本失敗', () => noteRepository.addRevision(id, title, content))
+    return run('errors.addRevision', () => noteRepository.addRevision(id, title, content))
   }
 
   function loadRevisions(id: string) {
-    return run('載入歷史版本失敗', () => noteRepository.getRevisions(id))
+    return run('errors.loadRevisions', () => noteRepository.getRevisions(id))
   }
 
   async function restoreRevision(id: string, revisionId: number) {
-    const note = await run('還原版本失敗', () => noteRepository.restoreRevision(id, revisionId))
+    const note = await run('errors.restoreRevision', () => noteRepository.restoreRevision(id, revisionId))
     if (note) upsert(note)
     return note
   }
@@ -118,7 +119,7 @@ export const useNoteStore = defineStore('note', () => {
   async function updateNote(id: string, data: NoteUpdate) {
     const current = getById(id)
     if (current) upsert({ ...current, ...data })
-    const saved = await run('儲存便籤失敗', () => noteRepository.updateNote(id, data))
+    const saved = await run('errors.saveNote', () => noteRepository.updateNote(id, data))
     if (saved) upsert(saved)
     return saved
   }
@@ -128,7 +129,7 @@ export const useNoteStore = defineStore('note', () => {
   }
 
   async function renameTag(from: string, to: string) {
-    await run('重新命名標籤失敗', () => noteRepository.renameTag(from, to))
+    await run('errors.renameTag', () => noteRepository.renameTag(from, to))
   }
 
   async function deleteTag(name: string) {
@@ -139,7 +140,7 @@ export const useNoteStore = defineStore('note', () => {
         upsert({ ...note, tags: note.tags.filter((tag) => tagKey(tag) !== key) })
       }
     }
-    await run('刪除標籤失敗', () => noteRepository.deleteTag(name))
+    await run('errors.deleteTag', () => noteRepository.deleteTag(name))
   }
 
   /** Manual order of one list, ids in display order. */
@@ -148,15 +149,15 @@ export const useNoteStore = defineStore('note', () => {
       const note = getById(id)
       if (note) upsert({ ...note, sortOrder: index })
     })
-    await run('儲存排序失敗', () => noteRepository.reorderNotes(ids))
+    await run('errors.saveOrder', () => noteRepository.reorderNotes(ids))
   }
 
   async function emptyTrash() {
     const ids = deletedNotes.value.map((note) => note.id)
-    const count = await run('清空垃圾桶失敗', () => noteRepository.emptyTrash())
+    const count = await run('errors.emptyTrash', () => noteRepository.emptyTrash())
     if (count === undefined) return
     ids.forEach(remove)
-    notice.value = count > 0 ? `已永久刪除 ${count} 張便籤` : '垃圾桶是空的'
+    notice.value = count > 0 ? t('notices.trashEmptied', { count }) : t('notices.trashAlreadyEmpty')
   }
 
   // ---- Batch actions (multi-select in the manager) ----
@@ -188,7 +189,7 @@ export const useNoteStore = defineStore('note', () => {
     })
   }
 
-  async function changeStatus(id: string, label: string, task: () => Promise<Note>, closeWindow: boolean) {
+  async function changeStatus(id: string, label: MessageKey, task: () => Promise<Note>, closeWindow: boolean) {
     const note = await run(label, task)
     if (!note) return undefined
     upsert(note)
@@ -196,15 +197,15 @@ export const useNoteStore = defineStore('note', () => {
     return note
   }
 
-  const archiveNote = (id: string) => changeStatus(id, '封存失敗', () => noteRepository.archiveNote(id), true)
-  const restoreNote = (id: string) => changeStatus(id, '還原失敗', () => noteRepository.restoreNote(id), false)
-  const deleteNote = (id: string) => changeStatus(id, '刪除失敗', () => noteRepository.softDeleteNote(id), true)
+  const archiveNote = (id: string) => changeStatus(id, 'errors.archive', () => noteRepository.archiveNote(id), true)
+  const restoreNote = (id: string) => changeStatus(id, 'errors.restore', () => noteRepository.restoreNote(id), false)
+  const deleteNote = (id: string) => changeStatus(id, 'errors.delete', () => noteRepository.softDeleteNote(id), true)
   const restoreDeletedNote = (id: string) =>
-    changeStatus(id, '還原失敗', () => noteRepository.restoreDeletedNote(id), false)
+    changeStatus(id, 'errors.restore', () => noteRepository.restoreDeletedNote(id), false)
 
   async function deleteNotePermanently(id: string) {
     await closeNoteWindow(id)
-    const done = await run('永久刪除失敗', async () => {
+    const done = await run('errors.deletePermanently', async () => {
       await noteRepository.deleteNotePermanently(id)
       return true
     })
@@ -212,56 +213,56 @@ export const useNoteStore = defineStore('note', () => {
   }
 
   async function openNoteWindow(id: string) {
-    await run('開啟便籤失敗', () => windowService.openNoteWindow(id))
+    await run('errors.openNote', () => windowService.openNoteWindow(id))
   }
 
   async function closeNoteWindow(id: string) {
-    await run('關閉便籤失敗', () => windowService.closeNoteWindow(id))
+    await run('errors.closeNote', () => windowService.closeNoteWindow(id))
   }
 
   async function showAllNotes() {
-    const shown = await run('顯示便籤失敗', () => windowService.showAllNotes())
-    if (shown !== undefined) notice.value = shown > 0 ? `已顯示 ${shown} 張便籤` : '沒有可顯示的便籤'
+    const shown = await run('errors.showNotes', () => windowService.showAllNotes())
+    if (shown !== undefined) notice.value = shown > 0 ? t('notices.notesShown', { count: shown }) : t('notices.nothingToShow')
   }
 
   async function arrangeNotes(layout: ArrangeLayout, anchor: ArrangeAnchor) {
-    const moved = await run('整理便籤失敗', () => windowService.arrangeNoteWindows(layout, anchor))
-    if (moved !== undefined) notice.value = moved > 0 ? `已整理 ${moved} 張便籤` : '桌面上沒有便籤'
+    const moved = await run('errors.arrangeNotes', () => windowService.arrangeNoteWindows(layout, anchor))
+    if (moved !== undefined) notice.value = moved > 0 ? t('notices.notesArranged', { count: moved }) : t('notices.noNotesOnDesktop')
   }
 
   /** Desktop workspace: only these notes stay open. */
   async function showOnlyNotes(ids: string[]) {
-    const shown = await run('顯示便籤失敗', () => windowService.showOnlyNotes(ids))
-    if (shown !== undefined) notice.value = `桌面只顯示 ${shown} 張便籤（其他已關閉，可用「顯示全部便籤」叫回）`
+    const shown = await run('errors.showNotes', () => windowService.showOnlyNotes(ids))
+    if (shown !== undefined) notice.value = t('notices.showOnly', { count: shown })
   }
 
   async function toggleNotesHidden() {
-    const hidden = await run('隱藏 / 顯示便籤失敗', () => windowService.toggleNotesHidden())
-    if (hidden !== undefined) notice.value = hidden ? '已暫時隱藏所有便籤（Ctrl+Alt+H 可再顯示）' : '已重新顯示便籤'
+    const hidden = await run('errors.toggleHidden', () => windowService.toggleNotesHidden())
+    if (hidden !== undefined) notice.value = hidden ? t('notices.notesHidden') : t('notices.notesUnhidden')
   }
 
   async function exportNotes() {
-    const result = await run('匯出失敗', () => noteRepository.exportNotes())
-    if (result) notice.value = `已匯出 ${result.count} 張便籤、${result.images} 張圖片到 ${result.path}`
+    const result = await run('errors.export', () => noteRepository.exportNotes())
+    if (result) notice.value = t('notices.exported', { count: result.count, images: result.images, path: result.path })
   }
 
   async function importNotes() {
-    const result = await run('匯入失敗', () => noteRepository.importNotes())
+    const result = await run('errors.import', () => noteRepository.importNotes())
     if (!result) return
     // Imported notes also arrive via `notes:changed`; reload to be safe for large files.
     await loadNotes()
     notice.value =
-      `已匯入 ${result.count} 張便籤、${result.images} 張圖片` +
-      (result.skipped > 0 ? `，略過 ${result.skipped} 張已存在的便籤` : '')
+      t('notices.imported', { count: result.count, images: result.images }) +
+      (result.skipped > 0 ? t('notices.importSkipped', { count: result.skipped }) : '')
   }
 
   async function cleanupImages() {
-    const result = await run('清理圖片失敗', () => imageService.cleanupUnused())
+    const result = await run('errors.cleanupImages', () => imageService.cleanupUnused())
     if (!result) return
     notice.value =
       result.count > 0
-        ? `已刪除 ${result.count} 張未使用的圖片，釋放 ${formatBytes(result.bytes)}`
-        : '沒有可清理的圖片（24 小時內新增的圖片會保留）'
+        ? t('notices.imagesCleaned', { count: result.count, size: formatBytes(result.bytes) })
+        : t('notices.noImagesToClean')
   }
 
   let unsubscribe: (() => void) | null = null

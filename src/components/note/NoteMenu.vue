@@ -8,7 +8,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { NOTE_COLOR_CLASSES, NOTE_COLOR_LABELS, NOTE_COLORS } from '@/constants/noteColors'
+import { NOTE_COLOR_CLASSES, NOTE_COLORS } from '@/constants/noteColors'
+import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import type { NoteColor } from '@/models/note'
 
@@ -47,7 +48,7 @@ function onCloseAutoFocus(event: Event) {
   <DropdownMenu :modal="false">
     <DropdownMenuTrigger
       class="inline-flex size-6 items-center justify-center rounded-sm text-note-ink/70 outline-none hover:bg-note-ink/10 hover:text-note-ink data-[state=open]:bg-note-ink/10"
-      title="更多"
+      :title="t('noteMenu.more')"
     >
       <Ellipsis class="size-3.5" />
     </DropdownMenuTrigger>
@@ -58,7 +59,7 @@ function onCloseAutoFocus(event: Event) {
           v-for="option in NOTE_COLORS"
           :key="option"
           type="button"
-          :title="NOTE_COLOR_LABELS[option]"
+          :title="t(`note.colors.${option}`)"
           :class="
             cn(
               NOTE_COLOR_CLASSES[option],
@@ -72,32 +73,32 @@ function onCloseAutoFocus(event: Event) {
       <DropdownMenuSeparator />
       <DropdownMenuItem @select="editTags">
         <Tag />
-        新增標籤
+        {{ t('common.addTag') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('history')">
         <History />
-        歷史版本
+        {{ t('noteMenu.history') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('new-note')">
         <Plus />
-        新增便籤
+        {{ t('common.newNote') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('open-main')">
         <LayoutList />
-        便籤管理
+        {{ t('noteMenu.manager') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('shortcuts')">
         <Keyboard />
-        快捷鍵說明
+        {{ t('noteMenu.shortcuts') }}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem @select="emit('archive')">
         <Archive />
-        封存
+        {{ t('common.archive') }}
       </DropdownMenuItem>
       <DropdownMenuItem variant="destructive" @select="emit('delete')">
         <Trash2 />
-        刪除
+        {{ t('common.delete') }}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

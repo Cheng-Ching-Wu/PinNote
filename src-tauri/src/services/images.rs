@@ -11,7 +11,9 @@ use uuid::Uuid;
 
 use crate::database::{note_repository, Database};
 use crate::error::{AppError, AppResult};
+use crate::i18n::pick;
 use crate::image_refs;
+use crate::tr;
 
 /// Unreferenced images younger than this are never removed automatically.
 pub const ORPHAN_GRACE: Duration = Duration::from_secs(24 * 60 * 60);
@@ -53,16 +55,21 @@ pub fn cleanup(app: &AppHandle, min_age: Duration) -> AppResult<CleanupResult> {
 pub fn save_into(dir: &Path, bytes: &[u8], extension: &str) -> AppResult<String> {
     let extension = normalize_extension(extension)?;
     if bytes.is_empty() {
-        return Err(AppError::Internal("圖片是空的".into()));
+        return Err(AppError::Internal(
+            pick("圖片是空的", "The image is empty").into(),
+        ));
     }
     if bytes.len() > MAX_IMAGE_BYTES {
-        return Err(AppError::Internal(format!(
+        return Err(AppError::Internal(tr!(
             "圖片超過 {} MB 上限",
+            "The image is larger than the {} MB limit",
             MAX_IMAGE_BYTES / 1024 / 1024
         )));
     }
     if !looks_like_image(bytes) {
-        return Err(AppError::Internal("不是支援的圖片格式".into()));
+        return Err(AppError::Internal(
+            pick("不是支援的圖片格式", "Not a supported image format").into(),
+        ));
     }
 
     std::fs::create_dir_all(dir)?;
@@ -75,7 +82,10 @@ pub fn save_into(dir: &Path, bytes: &[u8], extension: &str) -> AppResult<String>
 /// An existing file with that name is kept — names are unique and files immutable.
 pub fn write_named(dir: &Path, file_name: &str, bytes: &[u8]) -> AppResult<bool> {
     if !image_refs::is_safe_file_name(file_name) || !looks_like_image(bytes) {
-        return Err(AppError::Internal(format!("無效的圖片: {file_name}")));
+        return Err(AppError::Internal(tr!(
+            "無效的圖片: {file_name}",
+            "Invalid image: {file_name}"
+        )));
     }
     let path = dir.join(file_name);
     if path.exists() {
@@ -157,7 +167,10 @@ fn normalize_extension(extension: &str) -> AppResult<&'static str> {
         "gif" => Ok("gif"),
         "webp" => Ok("webp"),
         "bmp" => Ok("bmp"),
-        other => Err(AppError::Internal(format!("不支援的圖片格式: {other}"))),
+        other => Err(AppError::Internal(tr!(
+            "不支援的圖片格式: {other}",
+            "Unsupported image format: {other}"
+        ))),
     }
 }
 

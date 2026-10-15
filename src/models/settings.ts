@@ -1,3 +1,5 @@
+import type { LanguageSetting } from '@/i18n'
+
 /** User preferences stored in the SQLite `settings` table. */
 export interface AppSettings {
   /** Pinned (always-on-top) notes turn translucent while not focused / hovered. */
@@ -8,6 +10,8 @@ export interface AppSettings {
   trashRetentionDays: number
   /** Sync folder on this device; '' = sync off. */
   syncFolder: string
+  /** UI language; `system` follows the OS. Per device, not synced. */
+  language: LanguageSetting
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -15,4 +19,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   tagColors: {},
   trashRetentionDays: 30,
   syncFolder: '',
+  language: 'system',
 }

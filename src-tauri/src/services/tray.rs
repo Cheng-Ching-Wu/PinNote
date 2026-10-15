@@ -1,6 +1,8 @@
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::AppHandle;
+use tauri::{AppHandle, Wry};
+
+use crate::i18n::pick;
 
 use crate::services::{lifecycle, notes, window};
 
@@ -12,23 +14,26 @@ const MENU_TOGGLE_HIDDEN: &str = "toggle_hidden";
 const MENU_SEARCH: &str = "search";
 const MENU_QUIT: &str = "quit";
 
-pub fn init(app: &AppHandle) -> tauri::Result<()> {
+const TRAY_ID: &str = "pinnote-tray";
+
+/// Built in the current language; rebuilt by `refresh` when it changes.
+fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
+    let item = |id: &str, text: &str| MenuItem::with_id(app, id, text, true, None::<&str>);
     let header = MenuItem::with_id(app, "header", "PinNote", false, None::<&str>)?;
-    let new_note = MenuItem::with_id(app, MENU_NEW_NOTE, "新增便籤", true, None::<&str>)?;
-    let open_main = MenuItem::with_id(app, MENU_OPEN_MAIN, "開啟便籤管理", true, None::<&str>)?;
-    let from_clipboard =
-        MenuItem::with_id(app, MENU_FROM_CLIPBOARD, "從剪貼簿新增", true, None::<&str>)?;
-    let search = MenuItem::with_id(app, MENU_SEARCH, "快速搜尋", true, None::<&str>)?;
-    let show_all = MenuItem::with_id(app, MENU_SHOW_ALL, "顯示全部便籤", true, None::<&str>)?;
-    let toggle_hidden = MenuItem::with_id(
-        app,
-        MENU_TOGGLE_HIDDEN,
-        "隱藏 / 顯示便籤",
-        true,
-        None::<&str>,
+    let new_note = item(MENU_NEW_NOTE, pick("新增便籤", "New note"))?;
+    let open_main = item(MENU_OPEN_MAIN, pick("開啟便籤管理", "Open note manager"))?;
+    let from_clipboard = item(
+        MENU_FROM_CLIPBOARD,
+        pick("從剪貼簿新增", "New note from clipboard"),
     )?;
-    let quit = MenuItem::with_id(app, MENU_QUIT, "結束", true, None::<&str>)?;
-    let menu = Menu::with_items(
+    let search = item(MENU_SEARCH, pick("快速搜尋", "Quick search"))?;
+    let show_all = item(MENU_SHOW_ALL, pick("顯示全部便籤", "Show all notes"))?;
+    let toggle_hidden = item(
+        MENU_TOGGLE_HIDDEN,
+        pick("隱藏 / 顯示便籤", "Hide / show notes"),
+    )?;
+    let quit = item(MENU_QUIT, pick("結束", "Quit"))?;
+    Menu::with_items(
         app,
         &[
             &header,
@@ -43,9 +48,20 @@ pub fn init(app: &AppHandle) -> tauri::Result<()> {
             &PredefinedMenuItem::separator(app)?,
             &quit,
         ],
-    )?;
+    )
+}
 
-    let mut builder = TrayIconBuilder::with_id("pinnote-tray")
+/// Applies the current language to the tray menu.
+pub fn refresh(app: &AppHandle) -> tauri::Result<()> {
+    match app.tray_by_id(TRAY_ID) {
+        Some(tray) => tray.set_menu(Some(build_menu(app)?)),
+        None => Ok(()),
+    }
+}
+
+pub fn init(app: &AppHandle) -> tauri::Result<()> {
+    let menu = build_menu(app)?;
+    let mut builder = TrayIconBuilder::with_id(TRAY_ID)
         .tooltip("PinNote")
         .menu(&menu)
         .show_menu_on_left_click(false)

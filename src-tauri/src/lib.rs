@@ -2,6 +2,7 @@ mod commands;
 mod database;
 mod error;
 mod events;
+mod i18n;
 mod image_refs;
 mod models;
 mod services;

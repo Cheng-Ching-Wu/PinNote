@@ -8,8 +8,10 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 use crate::database::{settings_repository as repo, Database};
 use crate::error::{AppError, AppResult};
+use crate::i18n::pick;
 use crate::services::{notes, window};
 use crate::state::{AppState, ShortcutStatus};
+use crate::tr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShortcutAction {
@@ -40,12 +42,13 @@ impl ShortcutAction {
         Self::ALL.into_iter().find(|action| action.id() == id)
     }
 
+    /// The frontend shows its own translation by `id`; this one is for messages built here.
     fn label(self) -> &'static str {
         match self {
-            Self::NewNote => "新增便籤",
-            Self::NewFromClipboard => "從剪貼簿新增",
-            Self::ToggleHidden => "隱藏 / 顯示便籤",
-            Self::QuickSearch => "快速搜尋",
+            Self::NewNote => pick("新增便籤", "New note"),
+            Self::NewFromClipboard => pick("從剪貼簿新增", "New note from clipboard"),
+            Self::ToggleHidden => pick("隱藏 / 顯示便籤", "Hide / show notes"),
+            Self::QuickSearch => pick("快速搜尋", "Quick search"),
         }
     }
 
@@ -81,11 +84,19 @@ pub fn parse_accelerator(accelerator: &str) -> AppResult<Option<Shortcut>> {
     if accelerator.is_empty() {
         return Ok(None);
     }
-    let shortcut = Shortcut::from_str(accelerator)
-        .map_err(|err| AppError::Internal(format!("無法辨識的按鍵「{accelerator}」：{err}")))?;
+    let shortcut = Shortcut::from_str(accelerator).map_err(|err| {
+        AppError::Internal(tr!(
+            "無法辨識的按鍵「{accelerator}」：{err}",
+            "Unrecognized keys \"{accelerator}\": {err}"
+        ))
+    })?;
     if shortcut.mods.is_empty() && !is_function_key(accelerator) {
         return Err(AppError::Internal(
-            "單一按鍵只支援 F1–F24，其他按鍵請搭配 Ctrl / Alt / Shift / Win".into(),
+            pick(
+                "單一按鍵只支援 F1–F24，其他按鍵請搭配 Ctrl / Alt / Shift / Win",
+                "Only F1–F24 work on their own; other keys need Ctrl / Alt / Shift / Win",
+            )
+            .into(),
         ));
     }
     Ok(Some(shortcut))
@@ -181,8 +192,9 @@ pub fn set(app: &AppHandle, action_id: &str, accelerator: &str) -> AppResult<Vec
     if let Some(next) = next {
         for other in ShortcutAction::ALL.into_iter().filter(|a| *a != action) {
             if parse_accelerator(&configured(app, other)).ok().flatten() == Some(next) {
-                return Err(AppError::Internal(format!(
+                return Err(AppError::Internal(tr!(
                     "「{accelerator}」已用於「{}」",
+                    "\"{accelerator}\" is already used for \"{}\"",
                     other.label()
                 )));
             }
@@ -198,8 +210,9 @@ pub fn set(app: &AppHandle, action_id: &str, accelerator: &str) -> AppResult<Vec
             if let Some(previous) = previous {
                 let _ = try_register(app, action, previous);
             }
-            return Err(AppError::Internal(format!(
-                "「{accelerator}」無法註冊，可能已被其他程式占用（{err}）"
+            return Err(AppError::Internal(tr!(
+                "「{accelerator}」無法註冊，可能已被其他程式占用（{err}）",
+                "\"{accelerator}\" could not be registered; another app may be using it ({err})"
             )));
         }
     }
