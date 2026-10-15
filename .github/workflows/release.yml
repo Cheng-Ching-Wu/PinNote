@@ -1,10 +1,16 @@
 # Builds the Windows installers and attaches them to a draft GitHub Release.
-# Trigger: push a tag that matches the app version, e.g.
-#   git tag v0.1.0 && git push origin v0.1.0
+#
+# Triggers:
+# - Push to main: releases automatically when the version in tauri.conf.json
+#   has no tag yet (bump the version → merge to main → done). Otherwise skipped.
+# - Push a tag, e.g. `git tag v0.2.0 && git push origin v0.2.0` (must match the version).
+# - Manual run from the Actions tab.
 name: Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -12,8 +18,48 @@ on:
 permissions:
   contents: write
 
+# Never build the same ref twice at once.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.decide.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read app version
+        id: version
+        run: echo "version=$(jq -r .version src-tauri/tauri.conf.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Decide whether to release
+        id: decide
+        env:
+          TAG: v${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            if [ "$GITHUB_REF_NAME" != "$TAG" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match the app version ($TAG) in tauri.conf.json"
+              exit 1
+            fi
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          # A draft release has no git tag until it is published, so check releases too.
+          elif git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null \
+            || gh release view "$TAG" > /dev/null 2>&1; then
+            echo "$TAG already exists (tag or draft release) — bump the version to release again."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build-windows:
+    needs: check
+    if: needs.check.outputs.release == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,13 +83,15 @@ jobs:
           npm test
           cargo test --manifest-path src-tauri/Cargo.toml
 
+      # Creates the tag on this commit when it doesn't exist yet (main / manual runs).
       - name: Build and upload to release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
-          releaseName: PinNote ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
+          tagName: v${{ needs.check.outputs.version }}
+          releaseName: PinNote v${{ needs.check.outputs.version }}
+          releaseCommitish: ${{ github.sha }}
           releaseBody: 安裝檔見下方 Assets。目前尚未數位簽章，首次執行若出現 SmartScreen 警告請點「其他資訊」→「仍要執行」。
           releaseDraft: true
           prerelease: false
