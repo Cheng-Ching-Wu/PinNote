@@ -4,11 +4,11 @@
 
 ## 下載與安裝
 
-到 [Releases](https://github.com/Cheng-Ching-Wu/Sticky/releases) 下載最新版的 `PinNote_x.y.z_x64-setup.exe`（或 `.msi`）安裝，支援 Windows 10 / 11（需要 WebView2，Windows 11 已內建）。
+到 [Releases](https://github.com/Cheng-Ching-Wu/PinNote/releases) 下載最新版的 `PinNote_x.y.z_x64-setup.exe`（或 `.msi`）安裝，支援 Windows 10 / 11（需要 WebView2，Windows 11 已內建）。
 
 主要功能：多張獨立便籤視窗、置頂與收合、Rich text（清單、表格、圖片）、標籤與搜尋、封存 / 垃圾桶、歷史版本、便籤互相連結、透過雲端硬碟資料夾跨裝置同步、匯出 / 匯入、自訂全域快捷鍵、繁體中文 / English 介面（設定 → 語言）。詳見下方「行為說明」。
 
-從 v0.3.0 起，App 會自動檢查新版本並提示更新（設定 →「檢查更新…」/「自動檢查更新」）。v0.2.0 以前的版本沒有這個功能，需要手動下載安裝一次 v0.3.0。
+從 v0.3.0 起，App 會自動檢查新版本並提示更新（設定 →「應用程式說明…」可手動檢查更新、開關自動檢查）。v0.2.0 以前的版本沒有這個功能，需要手動下載安裝一次 v0.3.0。
 
 > 目前的安裝檔尚未數位簽章，第一次執行時 Windows SmartScreen 可能顯示「Windows 已保護您的電腦」，請點「其他資訊」→「仍要執行」。
 
@@ -18,8 +18,8 @@
 
 ```bash
 npm install
-npm run tauri dev      # 開發模式
-npm run tauri build    # 打包安裝檔
+npm run tauri:dev      # 開發模式
+npm run tauri:build    # 打包安裝檔
 npm test               # 前端單元測試 (vitest)
 cd src-tauri && cargo test   # Rust 單元測試（migration / repository）
 ```

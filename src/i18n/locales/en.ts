@@ -202,12 +202,24 @@ const en: Messages = {
     import: 'Import notes (JSON)',
     openBackups: 'Open backup folder',
     cleanupImages: 'Clean up unused images',
-    checkUpdate: 'Check for updates…',
-    autoCheckUpdates: 'Check for updates automatically',
+    about: 'About PinNote…',
+  },
+
+  about: {
+    version: 'Version {version}',
+    description:
+      'Lightweight desktop sticky notes: separate note windows, Markdown editing, tags and search, and sync across devices through a cloud drive folder. Notes stay on this computer.',
+    source: 'Source code',
+    releases: 'Release notes',
+    issues: 'Report a problem',
+    license: 'MIT License',
   },
 
   update: {
     title: 'Software update',
+    check: 'Check for updates',
+    autoCheck: 'Check for updates automatically',
+    autoCheckHint: "Checks at startup and once a day. You're asked before anything is installed.",
     currentVersion: 'Current version v{version}',
     checking: 'Checking for updates…',
     newVersion: 'Version v{version} is available',

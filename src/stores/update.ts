@@ -38,9 +38,8 @@ export const useUpdateStore = defineStore('update', () => {
     available.value = found
   }
 
-  /** Manual check (settings menu): always opens the dialog to show the result. */
+  /** Manual check from the about dialog. */
   async function check() {
-    dialogOpen.value = true
     checking.value = true
     error.value = null
     upToDate.value = false

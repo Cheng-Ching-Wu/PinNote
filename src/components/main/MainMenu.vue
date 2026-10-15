@@ -6,13 +6,13 @@ import {
   ArrowUpLeft,
   ArrowUpRight,
   Check,
-  CircleArrowUp,
   Crosshair,
   Download,
   EyeOff,
   FolderOpen,
   FolderSync,
   ImageOff,
+  Info,
   Keyboard,
   Languages,
   LayoutGrid,
@@ -49,7 +49,6 @@ import { loadStored, saveStored } from '@/utils/storage'
 defineProps<{
   autostart: boolean
   pinnedTranslucent: boolean
-  autoCheckUpdates: boolean
   language: LanguageSetting
 }>()
 
@@ -67,8 +66,7 @@ const emit = defineEmits<{
   'open-backups': []
   sync: []
   language: [language: LanguageSetting]
-  'check-update': []
-  'toggle-auto-update': []
+  about: []
 }>()
 
 // ---- 整理桌面便籤 (submenu): pick a layout, then a corner to run it ----
@@ -104,11 +102,10 @@ function arrange(anchor: ArrangeAnchor) {
 const languageName = (language: LanguageSetting) =>
   language === 'system' ? t('language.system') : LOCALE_NAMES[language]
 
-function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent' | 'toggle-auto-update') {
+function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent') {
   event.preventDefault()
   if (action === 'toggle-autostart') emit('toggle-autostart')
-  else if (action === 'toggle-translucent') emit('toggle-translucent')
-  else emit('toggle-auto-update')
+  else emit('toggle-translucent')
 }
 </script>
 
@@ -203,15 +200,9 @@ function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent
         {{ t('menu.cleanupImages') }}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem @select="emit('check-update')">
-        <CircleArrowUp />
-        {{ t('menu.checkUpdate') }}
-      </DropdownMenuItem>
-      <DropdownMenuItem @select="keepOpen($event, 'toggle-auto-update')">
-        <span class="flex size-3.5 items-center justify-center rounded-[3px] border border-input">
-          <Check v-if="autoCheckUpdates" class="size-3! text-foreground!" />
-        </span>
-        {{ t('menu.autoCheckUpdates') }}
+      <DropdownMenuItem @select="emit('about')">
+        <Info />
+        {{ t('menu.about') }}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

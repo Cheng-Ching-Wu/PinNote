@@ -196,12 +196,23 @@ const zhTW = {
     import: '匯入便籤 (JSON)',
     openBackups: '開啟自動備份資料夾',
     cleanupImages: '清理未使用的圖片',
-    checkUpdate: '檢查更新…',
-    autoCheckUpdates: '自動檢查更新',
+    about: '應用程式說明…',
+  },
+
+  about: {
+    version: '版本 {version}',
+    description: '輕量的桌面便籤：多張獨立便籤視窗、Markdown 編輯、標籤與搜尋，可透過雲端硬碟資料夾跨裝置同步。便籤只存在這台電腦。',
+    source: '原始碼',
+    releases: '版本紀錄',
+    issues: '回報問題',
+    license: 'MIT 授權',
   },
 
   update: {
     title: '軟體更新',
+    check: '檢查更新',
+    autoCheck: '自動檢查更新',
+    autoCheckHint: '啟動時與每天檢查一次，有新版本時會提示，不會自動安裝。',
     currentVersion: '目前版本 v{version}',
     checking: '正在檢查更新…',
     newVersion: '有新版本 v{version}',

@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-vue-next'
 
+import AboutDialog from '@/components/main/AboutDialog.vue'
 import BatchActionBar from '@/components/main/BatchActionBar.vue'
 import MainMenu from '@/components/main/MainMenu.vue'
 import NoteListItem from '@/components/main/NoteListItem.vue'
@@ -21,7 +22,6 @@ import NoteSortMenu from '@/components/main/NoteSortMenu.vue'
 import ShortcutSettingsDialog from '@/components/main/ShortcutSettingsDialog.vue'
 import SyncDialog from '@/components/main/SyncDialog.vue'
 import TrashBar from '@/components/main/TrashBar.vue'
-import UpdateDialog from '@/components/main/UpdateDialog.vue'
 import TagEditDialog from '@/components/tags/TagEditDialog.vue'
 import TagFilterBar from '@/components/tags/TagFilterBar.vue'
 import TagManagerDialog from '@/components/tags/TagManagerDialog.vue'
@@ -234,7 +234,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <MainMenu
             :autostart="settings.autostart"
             :pinned-translucent="settings.settings.pinnedTranslucent"
-            :auto-check-updates="settings.settings.autoCheckUpdates"
             :language="settings.settings.language"
             @show-all="store.showAllNotes()"
             @arrange="(layout, anchor) => store.arrangeNotes(layout, anchor)"
@@ -249,8 +248,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             @open-backups="settings.openBackupFolder()"
             @sync="syncDialogOpen = true"
             @language="settings.updateSettings({ language: $event })"
-            @check-update="update.check()"
-            @toggle-auto-update="settings.updateSettings({ autoCheckUpdates: !settings.settings.autoCheckUpdates })"
+            @about="update.openDialog()"
           />
           <Button size="sm" @click="store.createNote()">
             <Plus class="size-3.5" />
@@ -424,6 +422,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     <TagEditDialog v-model:note-ids="tagEditIds" />
     <TagManagerDialog v-model:open="tagManagerOpen" />
     <SyncDialog v-model:open="syncDialogOpen" />
-    <UpdateDialog />
+    <AboutDialog />
   </div>
 </template>
