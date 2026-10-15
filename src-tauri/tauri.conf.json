@@ -35,7 +35,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZENEYzQTBFNzI5N0IwQTMKUldTanNKZHlEanBQL1hsVVRTdXVlZjlMZHhhdXJsdVV1cnZ6cTlqYWlmU0o2Q1FSa1NqWFk2UzcK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDEzREU0NzE4QkNENkNCOTcKUldTWHk5YThHRWZlRS82aVR4NmZHWFNjRm9KQ25oS1JieEl1UDQwZjN6d1RhNWcrQ1FUVndrV1EK",
       "endpoints": [
         "https://github.com/Cheng-Ching-Wu/Sticky/releases/latest/download/latest.json"
       ],
