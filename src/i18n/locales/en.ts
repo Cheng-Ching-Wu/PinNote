@@ -202,6 +202,25 @@ const en: Messages = {
     import: 'Import notes (JSON)',
     openBackups: 'Open backup folder',
     cleanupImages: 'Clean up unused images',
+    checkUpdate: 'Check for updates…',
+    autoCheckUpdates: 'Check for updates automatically',
+  },
+
+  update: {
+    title: 'Software update',
+    currentVersion: 'Current version v{version}',
+    checking: 'Checking for updates…',
+    newVersion: 'Version v{version} is available',
+    upToDate: "You're on the latest version",
+    install: 'Update now',
+    later: 'Later',
+    view: 'View',
+    banner: 'PinNote v{version} is available',
+    preparing: 'Preparing download…',
+    downloading: 'Downloading {downloaded} / {total}',
+    restartHint: 'When the download finishes, all notes are saved and PinNote restarts.',
+    checkFailed: 'Could not check for updates: {error}',
+    installFailed: 'Update failed: {error}',
   },
 
   sync: {

@@ -12,6 +12,10 @@ export interface AppSettings {
   syncFolder: string
   /** UI language; `system` follows the OS. Per device, not synced. */
   language: LanguageSetting
+  /** Look for a new version at startup and once a day. */
+  autoCheckUpdates: boolean
+  /** Version whose update notice was dismissed ("later"); '' = none. */
+  dismissedUpdate: string
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -20,4 +24,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   trashRetentionDays: 30,
   syncFolder: '',
   language: 'system',
+  autoCheckUpdates: true,
+  dismissedUpdate: '',
 }

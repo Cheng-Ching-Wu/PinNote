@@ -6,6 +6,7 @@ import {
   ArrowUpLeft,
   ArrowUpRight,
   Check,
+  CircleArrowUp,
   Crosshair,
   Download,
   EyeOff,
@@ -45,7 +46,12 @@ import { LANGUAGE_SETTINGS, type LanguageSetting, LOCALE_NAMES, t } from '@/i18n
 import { cn } from '@/lib/utils'
 import { loadStored, saveStored } from '@/utils/storage'
 
-defineProps<{ autostart: boolean; pinnedTranslucent: boolean; language: LanguageSetting }>()
+defineProps<{
+  autostart: boolean
+  pinnedTranslucent: boolean
+  autoCheckUpdates: boolean
+  language: LanguageSetting
+}>()
 
 const emit = defineEmits<{
   'show-all': []
@@ -61,6 +67,8 @@ const emit = defineEmits<{
   'open-backups': []
   sync: []
   language: [language: LanguageSetting]
+  'check-update': []
+  'toggle-auto-update': []
 }>()
 
 // ---- 整理桌面便籤 (submenu): pick a layout, then a corner to run it ----
@@ -96,10 +104,11 @@ function arrange(anchor: ArrangeAnchor) {
 const languageName = (language: LanguageSetting) =>
   language === 'system' ? t('language.system') : LOCALE_NAMES[language]
 
-function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent') {
+function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent' | 'toggle-auto-update') {
   event.preventDefault()
   if (action === 'toggle-autostart') emit('toggle-autostart')
-  else emit('toggle-translucent')
+  else if (action === 'toggle-translucent') emit('toggle-translucent')
+  else emit('toggle-auto-update')
 }
 </script>
 
@@ -192,6 +201,17 @@ function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent
       <DropdownMenuItem @select="emit('cleanup-images')">
         <ImageOff />
         {{ t('menu.cleanupImages') }}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem @select="emit('check-update')">
+        <CircleArrowUp />
+        {{ t('menu.checkUpdate') }}
+      </DropdownMenuItem>
+      <DropdownMenuItem @select="keepOpen($event, 'toggle-auto-update')">
+        <span class="flex size-3.5 items-center justify-center rounded-[3px] border border-input">
+          <Check v-if="autoCheckUpdates" class="size-3! text-foreground!" />
+        </span>
+        {{ t('menu.autoCheckUpdates') }}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

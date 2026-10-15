@@ -8,6 +8,8 @@
 
 主要功能：多張獨立便籤視窗、置頂與收合、Rich text（清單、表格、圖片）、標籤與搜尋、封存 / 垃圾桶、歷史版本、便籤互相連結、透過雲端硬碟資料夾跨裝置同步、匯出 / 匯入、自訂全域快捷鍵、繁體中文 / English 介面（設定 → 語言）。詳見下方「行為說明」。
 
+從 v0.3.0 起，App 會自動檢查新版本並提示更新（設定 →「檢查更新…」/「自動檢查更新」）。v0.2.0 以前的版本沒有這個功能，需要手動下載安裝一次 v0.3.0。
+
 > 目前的安裝檔尚未數位簽章，第一次執行時 Windows SmartScreen 可能顯示「Windows 已保護您的電腦」，請點「其他資訊」→「仍要執行」。
 
 ## 開發
@@ -105,7 +107,16 @@ Rust service → note_repository → SQLite (rusqlite)
 - 管理視窗清單會標示「未顯示」（已用 × 關閉）的便籤；設定選單與系統匣都有「顯示全部便籤」。
 - **開機自動啟動**（設定選單）：開機啟動時帶 `--autostart`，只還原桌面便籤，不開管理視窗。
 - **自動備份**：每天第一次啟動、執行 migration 之前，以 `VACUUM INTO` 備份到 `%APPDATA%\com.pinnote.app\backups\pinnote-YYYYMMDD.db`，保留最近 7 份。這些快照引用到的圖片會同步到 `backups\images\`（只複製新檔，不再被任何快照引用的會移除）。還原方式：結束 App，用備份檔覆蓋 `pinnote.db`，並把 `backups\images\` 的檔案複製回 `images\`。
+- **自動更新**：啟動 30 秒後與之後每 24 小時，向 GitHub 最新一個「已公開」Release 的 `latest.json` 檢查新版本（開發模式不會自動檢查）。有新版時管理視窗顯示提示、系統匣多一項「更新到 vX…」；按「稍後」的版本不再提示。更新檔以 minisign 簽章，公鑰在 `tauri.conf.json` 的 `plugins.updater.pubkey`，驗證通過才安裝；安裝前會先儲存所有便籤，安裝後自動重新啟動。
 - **匯出 / 匯入 JSON**（設定選單）：匯出包含所有狀態的便籤，以及它們使用的圖片（base64 內嵌，格式 v3 含標籤；仍可匯入舊的 v1 / v2 檔）；匯入時 id 已存在的便籤會略過，所以重複匯入同一個檔案不會產生重複便籤。匯入的便籤不會自動開到桌面。
+
+## 發佈新版
+
+1. 把 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 的版本號改成新版，合併到 `main` 並 push。
+2. [release.yml](.github/workflows/release.yml) 發現這個版本還沒有 tag / Release，就會測試、打包，建立草稿 Release（含安裝檔與自動更新用的 `latest.json`）。
+3. 到 GitHub Releases 補上更新說明後按 **Publish**。公開後，已安裝的 App 才會收到更新（草稿不會被偵測到）。
+
+更新檔簽章用的私鑰與密碼存在 repo 的 Actions secrets：`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。**私鑰遺失就無法再推送更新**，請另外備份。
 
 ## 擴充方式
 
@@ -127,4 +138,4 @@ Release binaries are built from this repository by GitHub Actions ([release.yml]
 
 ### Privacy policy
 
-This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. Notes are stored locally in SQLite; cross-device sync (off by default) only writes to a folder the user chooses, such as one inside a cloud drive client.
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it, with one exception: to check for updates it downloads a small version file (`latest.json`) from this repository's GitHub Releases at startup and once a day. This request sends no notes or personal data, and can be turned off in Settings → "Check for updates automatically". Notes are stored locally in SQLite; cross-device sync (off by default) only writes to a folder the user chooses, such as one inside a cloud drive client.

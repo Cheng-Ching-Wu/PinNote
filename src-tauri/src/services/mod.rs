@@ -6,4 +6,5 @@ pub mod shortcut;
 pub mod sync;
 pub mod transfer;
 pub mod tray;
+pub mod updater;
 pub mod window;

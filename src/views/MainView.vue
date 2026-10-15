@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   CircleAlert,
+  CircleArrowUp,
   CircleCheck,
   Cloud,
   CloudAlert,
@@ -20,6 +21,7 @@ import NoteSortMenu from '@/components/main/NoteSortMenu.vue'
 import ShortcutSettingsDialog from '@/components/main/ShortcutSettingsDialog.vue'
 import SyncDialog from '@/components/main/SyncDialog.vue'
 import TrashBar from '@/components/main/TrashBar.vue'
+import UpdateDialog from '@/components/main/UpdateDialog.vue'
 import TagEditDialog from '@/components/tags/TagEditDialog.vue'
 import TagFilterBar from '@/components/tags/TagFilterBar.vue'
 import TagManagerDialog from '@/components/tags/TagManagerDialog.vue'
@@ -35,6 +37,7 @@ import { matchesQuery, useNoteStore } from '@/stores/note'
 import { useSettingsStore } from '@/stores/settings'
 import { useShortcutStore } from '@/stores/shortcuts'
 import { useSyncStore } from '@/stores/sync'
+import { useUpdateStore } from '@/stores/update'
 import { formatNoteTime } from '@/utils/time'
 import { formatAccelerator } from '@/utils/accelerator'
 import { isNoteSort, mergeVisibleOrder, type NoteSort, sortNotes } from '@/utils/sort'
@@ -48,6 +51,7 @@ const settings = useSettingsStore()
 
 const sync = useSyncStore()
 const syncDialogOpen = ref(false)
+const update = useUpdateStore()
 
 const syncTitle = computed(() => {
   const status = sync.status
@@ -167,7 +171,12 @@ function restore(note: Note) {
 }
 
 const dialogOpen = computed(
-  () => shortcutDialogOpen.value || tagManagerOpen.value || syncDialogOpen.value || tagEditIds.value.length > 0,
+  () =>
+    shortcutDialogOpen.value ||
+    tagManagerOpen.value ||
+    syncDialogOpen.value ||
+    update.dialogOpen ||
+    tagEditIds.value.length > 0,
 )
 
 function isTyping(target: EventTarget | null) {
@@ -201,6 +210,7 @@ onMounted(async () => {
     }
   })
   await shortcutStore.load()
+  await Promise.all([update.load(), update.startSync()])
 })
 
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
@@ -224,6 +234,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <MainMenu
             :autostart="settings.autostart"
             :pinned-translucent="settings.settings.pinnedTranslucent"
+            :auto-check-updates="settings.settings.autoCheckUpdates"
             :language="settings.settings.language"
             @show-all="store.showAllNotes()"
             @arrange="(layout, anchor) => store.arrangeNotes(layout, anchor)"
@@ -238,6 +249,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             @open-backups="settings.openBackupFolder()"
             @sync="syncDialogOpen = true"
             @language="settings.updateSettings({ language: $event })"
+            @check-update="update.check()"
+            @toggle-auto-update="settings.updateSettings({ autoCheckUpdates: !settings.settings.autoCheckUpdates })"
           />
           <Button size="sm" @click="store.createNote()">
             <Plus class="size-3.5" />
@@ -336,6 +349,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       </p>
     </main>
 
+    <div
+      v-if="update.showBanner"
+      class="mx-3 mb-2 flex items-start gap-2 rounded-md border border-sky-300 bg-sky-50 px-2.5 py-2 text-xs text-sky-900"
+    >
+      <CircleArrowUp class="mt-px size-3.5 shrink-0" />
+      <span class="flex-1">{{ t('update.banner', { version: update.available?.version ?? '' }) }}</span>
+      <button type="button" class="shrink-0 font-medium hover:underline" @click="update.openDialog()">
+        {{ t('update.view') }}
+      </button>
+      <button type="button" class="shrink-0 text-sky-900/70 hover:underline" @click="update.dismiss()">
+        {{ t('update.later') }}
+      </button>
+    </div>
     <!-- Stays until resolved: notes are no longer reaching other devices. -->
     <div
       v-if="sync.status.folderMissing"
@@ -398,5 +424,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     <TagEditDialog v-model:note-ids="tagEditIds" />
     <TagManagerDialog v-model:open="tagManagerOpen" />
     <SyncDialog v-model:open="syncDialogOpen" />
+    <UpdateDialog />
   </div>
 </template>

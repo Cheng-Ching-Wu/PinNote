@@ -196,6 +196,25 @@ const zhTW = {
     import: '匯入便籤 (JSON)',
     openBackups: '開啟自動備份資料夾',
     cleanupImages: '清理未使用的圖片',
+    checkUpdate: '檢查更新…',
+    autoCheckUpdates: '自動檢查更新',
+  },
+
+  update: {
+    title: '軟體更新',
+    currentVersion: '目前版本 v{version}',
+    checking: '正在檢查更新…',
+    newVersion: '有新版本 v{version}',
+    upToDate: '已是最新版本',
+    install: '立即更新',
+    later: '稍後',
+    view: '查看',
+    banner: 'PinNote v{version} 已推出',
+    preparing: '準備下載…',
+    downloading: '下載中 {downloaded} / {total}',
+    restartHint: '下載完成後會儲存所有便籤並自動重新啟動 PinNote。',
+    checkFailed: '無法檢查更新：{error}',
+    installFailed: '更新失敗：{error}',
   },
 
   sync: {

@@ -5,6 +5,7 @@ use tauri_plugin_opener::OpenerExt;
 use crate::error::{AppError, AppResult};
 use crate::models::{AppSettings, AppSettingsPatch};
 use crate::services::transfer::{self, TransferResult};
+use crate::services::updater::{self, UpdateInfo};
 use crate::services::{images, settings, shortcut};
 use crate::state::ShortcutStatus;
 use crate::tr;
@@ -125,4 +126,22 @@ pub fn cleanup_images(app: AppHandle) -> AppResult<images::CleanupResult> {
 #[tauri::command]
 pub fn open_backup_folder(app: AppHandle) -> AppResult<()> {
     transfer::open_backup_dir(&app)
+}
+
+/// The update found by the last check, if any (without asking the server again).
+#[tauri::command]
+pub fn get_available_update(app: AppHandle) -> Option<UpdateInfo> {
+    updater::available(&app)
+}
+
+/// Settings → 檢查更新. `None` = already the latest version.
+#[tauri::command]
+pub async fn check_for_update(app: AppHandle) -> AppResult<Option<UpdateInfo>> {
+    updater::check(&app).await
+}
+
+/// Downloads and installs the available update; the app restarts into the new version.
+#[tauri::command]
+pub async fn install_update(app: AppHandle) -> AppResult<()> {
+    updater::install(&app).await
 }

@@ -88,10 +88,15 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the update packages; the app checks them against `plugins.updater.pubkey`.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v${{ needs.check.outputs.version }}
           releaseName: PinNote v${{ needs.check.outputs.version }}
           releaseCommitish: ${{ github.sha }}
           releaseBody: 安裝檔見下方 Assets。目前尚未數位簽章，首次執行若出現 SmartScreen 警告請點「其他資訊」→「仍要執行」。
+          # Also attach latest.json for the in-app updater.
+          includeUpdaterJson: true
           releaseDraft: true
           prerelease: false

@@ -7,6 +7,8 @@ const TAG_COLORS: &str = "tag_colors";
 const TRASH_RETENTION_DAYS: &str = "trash_retention_days";
 const SYNC_FOLDER: &str = "sync_folder";
 const LANGUAGE: &str = "language";
+const AUTO_CHECK_UPDATES: &str = "auto_check_updates";
+const DISMISSED_UPDATE: &str = "dismissed_update";
 
 /// Follow the OS language (see `crate::i18n`).
 pub const DEFAULT_LANGUAGE: &str = "system";
@@ -31,6 +33,10 @@ pub struct AppSettings {
     pub sync_folder: String,
     /// "system" | "zh-TW" | "en". Per device, never synced.
     pub language: String,
+    /// Look for a new version at startup and once a day.
+    pub auto_check_updates: bool,
+    /// Version whose update notice was dismissed ("later"); "" = none.
+    pub dismissed_update: String,
 }
 
 impl Default for AppSettings {
@@ -41,6 +47,8 @@ impl Default for AppSettings {
             trash_retention_days: DEFAULT_TRASH_RETENTION_DAYS,
             sync_folder: String::new(),
             language: DEFAULT_LANGUAGE.into(),
+            auto_check_updates: true,
+            dismissed_update: String::new(),
         }
     }
 }
@@ -62,6 +70,10 @@ impl AppSettings {
                 .unwrap_or(defaults.trash_retention_days),
             sync_folder: map.get(SYNC_FOLDER).cloned().unwrap_or_default(),
             language: map.get(LANGUAGE).cloned().unwrap_or(defaults.language),
+            auto_check_updates: map
+                .get(AUTO_CHECK_UPDATES)
+                .map_or(defaults.auto_check_updates, |v| v == "true"),
+            dismissed_update: map.get(DISMISSED_UPDATE).cloned().unwrap_or_default(),
         }
     }
 }
@@ -76,6 +88,8 @@ pub struct AppSettingsPatch {
     pub trash_retention_days: Option<u32>,
     pub sync_folder: Option<String>,
     pub language: Option<String>,
+    pub auto_check_updates: Option<bool>,
+    pub dismissed_update: Option<String>,
 }
 
 impl AppSettingsPatch {
@@ -96,6 +110,12 @@ impl AppSettingsPatch {
         }
         if let Some(language) = &self.language {
             entries.push((LANGUAGE, language.clone()));
+        }
+        if let Some(enabled) = self.auto_check_updates {
+            entries.push((AUTO_CHECK_UPDATES, enabled.to_string()));
+        }
+        if let Some(version) = &self.dismissed_update {
+            entries.push((DISMISSED_UPDATE, version.clone()));
         }
         entries
     }

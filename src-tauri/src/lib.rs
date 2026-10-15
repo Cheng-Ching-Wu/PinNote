@@ -29,8 +29,10 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState::default())
         .manage(services::sync::SyncState::default())
+        .manage(services::updater::UpdateState::default())
         .setup(|app| {
             lifecycle::startup(app.handle())?;
             Ok(())
@@ -80,6 +82,9 @@ pub fn run() {
             commands::app::get_images_dir,
             commands::app::save_image,
             commands::app::cleanup_images,
+            commands::app::get_available_update,
+            commands::app::check_for_update,
+            commands::app::install_update,
         ])
         .build(tauri::generate_context!())
         .expect("error while building PinNote");

@@ -14,6 +14,7 @@ import { CONTENT_SAVE_DELAY } from '@/constants/window'
 import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { syncService } from '@/services/syncService'
+import { updateService } from '@/services/updateService'
 import { windowService } from '@/services/windowService'
 import type { Note } from '@/models/note'
 import { useNoteStore } from '@/stores/note'
@@ -129,6 +130,7 @@ async function onSynced(ids: string[]) {
   editorRef.value?.showMessage(t('editor.syncedFromOtherDevice'))
 }
 let stopSyncListener: (() => void) | undefined
+let stopFlushListener: (() => void) | undefined
 
 onMounted(async () => {
   const loaded = await store.loadNote(props.id)
@@ -141,11 +143,14 @@ onMounted(async () => {
   ready.value = true
   window.addEventListener('blur', flushOnBlur)
   stopSyncListener = await syncService.onNotesSynced((ids) => void onSynced(ids))
+  // An update is about to close the app.
+  stopFlushListener = await updateService.onFlushRequested(flushOnBlur)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('blur', flushOnBlur)
   stopSyncListener?.()
+  stopFlushListener?.()
 })
 
 async function close() {

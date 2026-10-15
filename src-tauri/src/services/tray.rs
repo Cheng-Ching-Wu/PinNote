@@ -1,10 +1,10 @@
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Wry};
+use tauri::{AppHandle, Emitter, Wry};
 
 use crate::i18n::pick;
-
-use crate::services::{lifecycle, notes, window};
+use crate::services::{lifecycle, notes, updater, window};
+use crate::tr;
 
 const MENU_NEW_NOTE: &str = "new_note";
 const MENU_OPEN_MAIN: &str = "open_main";
@@ -13,10 +13,11 @@ const MENU_FROM_CLIPBOARD: &str = "from_clipboard";
 const MENU_TOGGLE_HIDDEN: &str = "toggle_hidden";
 const MENU_SEARCH: &str = "search";
 const MENU_QUIT: &str = "quit";
+const MENU_UPDATE: &str = "update";
 
 const TRAY_ID: &str = "pinnote-tray";
 
-/// Built in the current language; rebuilt by `refresh` when it changes.
+/// Built in the current language; rebuilt by `refresh` when it (or the available update) changes.
 fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     let item = |id: &str, text: &str| MenuItem::with_id(app, id, text, true, None::<&str>);
     let header = MenuItem::with_id(app, "header", "PinNote", false, None::<&str>)?;
@@ -33,7 +34,7 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         pick("隱藏 / 顯示便籤", "Hide / show notes"),
     )?;
     let quit = item(MENU_QUIT, pick("結束", "Quit"))?;
-    Menu::with_items(
+    let menu = Menu::with_items(
         app,
         &[
             &header,
@@ -46,12 +47,17 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
             &show_all,
             &toggle_hidden,
             &PredefinedMenuItem::separator(app)?,
-            &quit,
         ],
-    )
+    )?;
+    if let Some(update) = updater::available(app) {
+        let text = tr!("更新到 v{}…", "Update to v{}…", update.version);
+        menu.append(&item(MENU_UPDATE, &text)?)?;
+    }
+    menu.append(&quit)?;
+    Ok(menu)
 }
 
-/// Applies the current language to the tray menu.
+/// Applies the current language and update state to the tray menu.
 pub fn refresh(app: &AppHandle) -> tauri::Result<()> {
     match app.tray_by_id(TRAY_ID) {
         Some(tray) => tray.set_menu(Some(build_menu(app)?)),
@@ -95,6 +101,13 @@ pub fn init(app: &AppHandle) -> tauri::Result<()> {
                 if let Err(err) = notes::show_all(app) {
                     eprintln!("[pinnote] tray: failed to show notes: {err}");
                 }
+            }
+            MENU_UPDATE => {
+                // The manager window shows the update dialog.
+                if let Err(err) = window::show_main_window(app) {
+                    eprintln!("[pinnote] tray: failed to show main window: {err}");
+                }
+                let _ = app.emit_to(window::MAIN_LABEL, updater::UPDATE_OPEN, ());
             }
             MENU_QUIT => lifecycle::quit(app),
             _ => {}

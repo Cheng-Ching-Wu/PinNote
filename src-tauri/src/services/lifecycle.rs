@@ -7,7 +7,7 @@ use tauri::{AppHandle, Manager, Window, WindowEvent};
 use crate::database::{backup, note_repository as repo, Database};
 use crate::error::AppResult;
 use crate::i18n;
-use crate::services::{images, notes, settings, shortcut, sync, transfer, tray, window};
+use crate::services::{images, notes, settings, shortcut, sync, transfer, tray, updater, window};
 use crate::state::AppState;
 
 const DB_FILE: &str = "pinnote.db";
@@ -71,6 +71,7 @@ pub fn startup(app: &AppHandle) -> AppResult<()> {
     }
     shortcut::register_all(app);
     sync::start(app);
+    updater::start(app);
 
     Ok(())
 }
@@ -101,6 +102,13 @@ pub fn handle_window_event(window: &Window, event: &WindowEvent) {
 }
 
 pub fn quit(app: &AppHandle) {
+    prepare_exit(app);
+    app.exit(0);
+}
+
+/// Marks the app as shutting down and saves what the windows haven't yet.
+/// Also used before an update's installer closes the app.
+pub fn prepare_exit(app: &AppHandle) {
     app.state::<AppState>().set_quitting();
     // Debounced saves in the note windows may not have fired yet.
     for label in app.webview_windows().keys() {
@@ -110,7 +118,6 @@ pub fn quit(app: &AppHandle) {
             }
         }
     }
-    app.exit(0);
 }
 
 fn persist_geometry(app: &AppHandle, id: &str) -> AppResult<()> {
