@@ -1,6 +1,6 @@
 [package]
 name = "pinnote"
-version = "0.3.1"
+version = "0.3.2"
 description = "PinNote - lightweight desktop sticky notes"
 authors = ["Cheng-Ching-Wu"]
 license = "MIT"
