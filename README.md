@@ -110,17 +110,6 @@ Rust service → note_repository → SQLite (rusqlite)
 - **自動更新**：啟動 30 秒後與之後每 24 小時，向 GitHub 最新一個「已公開」Release 的 `latest.json` 檢查新版本（開發模式不會自動檢查）。有新版時管理視窗顯示提示、系統匣多一項「更新到 vX…」；按「稍後」的版本不再提示。更新檔以 minisign 簽章，公鑰在 `tauri.conf.json` 的 `plugins.updater.pubkey`，驗證通過才安裝；安裝前會先儲存所有便籤，安裝後自動重新啟動。
 - **匯出 / 匯入 JSON**（設定選單）：匯出包含所有狀態的便籤，以及它們使用的圖片（base64 內嵌，格式 v3 含標籤；仍可匯入舊的 v1 / v2 檔）；匯入時 id 已存在的便籤會略過，所以重複匯入同一個檔案不會產生重複便籤。匯入的便籤不會自動開到桌面。
 
-## 發佈新版
-
-`develop` 是發版分支，`main` 只存放已發佈的版本。
-
-1. 功能分支合併到 `develop`，把 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 的版本號改成新版，push `develop`。
-2. [release.yml](.github/workflows/release.yml) 發現這個版本還沒有 tag / Release，就會測試、打包，建立草稿 Release（含安裝檔與自動更新用的 `latest.json`）。
-3. 到 GitHub Releases 補上更新說明後按 **Publish**。公開後，已安裝的 App 才會收到更新（草稿不會被偵測到）。
-4. 把 `develop` 合併到 `main` 並 push。
-
-更新檔簽章用的私鑰與密碼存在 repo 的 Actions secrets：`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。**私鑰遺失就無法再推送更新**，請另外備份。
-
 ## 擴充方式
 
 - 新欄位：新增 `src-tauri/migrations/000N_*.sql` 並加入 `MIGRATIONS` 清單，再擴充 `Note` / `NoteUpdate`；若要跨裝置同步，也要加進 `services/sync` 的同步欄位與合併規則。
