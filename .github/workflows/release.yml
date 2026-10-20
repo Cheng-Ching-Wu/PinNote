@@ -1,8 +1,10 @@
 # Builds the Windows installers and attaches them to a draft GitHub Release.
 #
 # Triggers:
-# - Push to main: releases automatically when the version in tauri.conf.json
-#   has no tag yet (bump the version → merge to main → done). Otherwise skipped.
+# - Push to develop (the release branch): releases automatically when the version
+#   in tauri.conf.json has no tag yet (bump the version → push develop → done).
+#   Otherwise skipped. After publishing, merge develop into main, which only
+#   holds released versions.
 # - Push a tag, e.g. `git tag v0.2.0 && git push origin v0.2.0` (must match the version).
 # - Manual run from the Actions tab.
 name: Release
@@ -10,7 +12,7 @@ name: Release
 on:
   push:
     branches:
-      - main
+      - develop
     tags:
       - "v*"
   workflow_dispatch:

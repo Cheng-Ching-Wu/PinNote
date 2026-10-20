@@ -112,9 +112,12 @@ Rust service → note_repository → SQLite (rusqlite)
 
 ## 發佈新版
 
-1. 把 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 的版本號改成新版，合併到 `main` 並 push。
+`develop` 是發版分支，`main` 只存放已發佈的版本。
+
+1. 功能分支合併到 `develop`，把 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 的版本號改成新版，push `develop`。
 2. [release.yml](.github/workflows/release.yml) 發現這個版本還沒有 tag / Release，就會測試、打包，建立草稿 Release（含安裝檔與自動更新用的 `latest.json`）。
 3. 到 GitHub Releases 補上更新說明後按 **Publish**。公開後，已安裝的 App 才會收到更新（草稿不會被偵測到）。
+4. 把 `develop` 合併到 `main` 並 push。
 
 更新檔簽章用的私鑰與密碼存在 repo 的 Actions secrets：`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。**私鑰遺失就無法再推送更新**，請另外備份。
 
