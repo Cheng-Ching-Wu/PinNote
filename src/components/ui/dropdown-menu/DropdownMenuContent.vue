@@ -17,6 +17,7 @@ const props = withDefaults(
 </script>
 
 <template>
+  <!-- max-h uses the space reka-ui measures inside the window, so a tall menu scrolls instead of being cut off. -->
   <DropdownMenuPortal>
     <DropdownMenuContent
       v-bind="$attrs"
@@ -25,7 +26,7 @@ const props = withDefaults(
       :collision-padding="4"
       :class="
         cn(
-          'z-50 min-w-36 overflow-hidden rounded-md border bg-card p-1 text-foreground shadow-md',
+          'z-50 max-h-(--reka-dropdown-menu-content-available-height) min-w-36 overflow-x-hidden overflow-y-auto rounded-md border bg-card p-1 text-foreground shadow-md',
           props.class,
         )
       "
