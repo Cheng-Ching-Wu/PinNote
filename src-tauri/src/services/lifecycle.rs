@@ -7,7 +7,9 @@ use tauri::{AppHandle, Manager, Window, WindowEvent};
 use crate::database::{backup, note_repository as repo, Database};
 use crate::error::AppResult;
 use crate::i18n;
-use crate::services::{images, notes, settings, shortcut, sync, transfer, tray, updater, window};
+use crate::services::{
+    images, notes, settings, shortcut, snap, sync, transfer, tray, updater, window,
+};
 use crate::state::AppState;
 
 const DB_FILE: &str = "pinnote.db";
@@ -35,7 +37,9 @@ pub fn startup(app: &AppHandle) -> AppResult<()> {
     let open_notes = db.with_conn(|conn| repo::list_open(conn))?;
     app.manage(db);
     // Before any window or the tray is created, so they start in the right language.
-    i18n::apply(&settings::get(app)?.language);
+    let saved = settings::get(app)?;
+    i18n::apply(&saved.language);
+    snap::set_enabled(saved.snap_windows);
 
     // After the backup above, so anything removed here is still in the backup.
     purge_expired_trash(app);

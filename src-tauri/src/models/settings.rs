@@ -9,6 +9,7 @@ const SYNC_FOLDER: &str = "sync_folder";
 const LANGUAGE: &str = "language";
 const AUTO_CHECK_UPDATES: &str = "auto_check_updates";
 const DISMISSED_UPDATE: &str = "dismissed_update";
+const SNAP_WINDOWS: &str = "snap_windows";
 
 /// Follow the OS language (see `crate::i18n`).
 pub const DEFAULT_LANGUAGE: &str = "system";
@@ -37,6 +38,8 @@ pub struct AppSettings {
     pub auto_check_updates: bool,
     /// Version whose update notice was dismissed ("later"); "" = none.
     pub dismissed_update: String,
+    /// Dragged / resized notes snap to other notes and the screen edges. Per device, never synced.
+    pub snap_windows: bool,
 }
 
 impl Default for AppSettings {
@@ -49,6 +52,7 @@ impl Default for AppSettings {
             language: DEFAULT_LANGUAGE.into(),
             auto_check_updates: true,
             dismissed_update: String::new(),
+            snap_windows: true,
         }
     }
 }
@@ -74,6 +78,9 @@ impl AppSettings {
                 .get(AUTO_CHECK_UPDATES)
                 .map_or(defaults.auto_check_updates, |v| v == "true"),
             dismissed_update: map.get(DISMISSED_UPDATE).cloned().unwrap_or_default(),
+            snap_windows: map
+                .get(SNAP_WINDOWS)
+                .map_or(defaults.snap_windows, |v| v == "true"),
         }
     }
 }
@@ -90,6 +97,7 @@ pub struct AppSettingsPatch {
     pub language: Option<String>,
     pub auto_check_updates: Option<bool>,
     pub dismissed_update: Option<String>,
+    pub snap_windows: Option<bool>,
 }
 
 impl AppSettingsPatch {
@@ -116,6 +124,9 @@ impl AppSettingsPatch {
         }
         if let Some(version) = &self.dismissed_update {
             entries.push((DISMISSED_UPDATE, version.clone()));
+        }
+        if let Some(enabled) = self.snap_windows {
+            entries.push((SNAP_WINDOWS, enabled.to_string()));
         }
         entries
     }

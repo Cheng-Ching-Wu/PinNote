@@ -38,6 +38,18 @@ tokio = { version = "1", features = ["time"] }
 base64 = "0.23.1"
 sys-locale = "0.3"
 
+# Same version Tauri already uses; for snapping note windows (`services/snap.rs`).
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Dwm",
+  "Win32_Graphics_Gdi",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

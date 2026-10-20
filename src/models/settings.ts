@@ -16,6 +16,8 @@ export interface AppSettings {
   autoCheckUpdates: boolean
   /** Version whose update notice was dismissed ("later"); '' = none. */
   dismissedUpdate: string
+  /** Dragged / resized notes snap to other notes and the screen edges (Alt pauses it). Per device. */
+  snapWindows: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -26,4 +28,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   language: 'system',
   autoCheckUpdates: true,
   dismissedUpdate: '',
+  snapWindows: true,
 }

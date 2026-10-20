@@ -49,6 +49,7 @@ import { loadStored, saveStored } from '@/utils/storage'
 defineProps<{
   autostart: boolean
   pinnedTranslucent: boolean
+  snapWindows: boolean
   language: LanguageSetting
 }>()
 
@@ -58,6 +59,7 @@ const emit = defineEmits<{
   'toggle-hidden': []
   'toggle-autostart': []
   'toggle-translucent': []
+  'toggle-snap': []
   shortcuts: []
   'manage-tags': []
   'cleanup-images': []
@@ -102,10 +104,11 @@ function arrange(anchor: ArrangeAnchor) {
 const languageName = (language: LanguageSetting) =>
   language === 'system' ? t('language.system') : LOCALE_NAMES[language]
 
-function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent') {
+function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent' | 'toggle-snap') {
   event.preventDefault()
   if (action === 'toggle-autostart') emit('toggle-autostart')
-  else emit('toggle-translucent')
+  else if (action === 'toggle-translucent') emit('toggle-translucent')
+  else emit('toggle-snap')
 }
 </script>
 
@@ -130,7 +133,7 @@ function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent
           <LayoutGrid />
           {{ t('arrange.title') }}
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent class="w-40">
+        <DropdownMenuSubContent class="w-44">
           <DropdownMenuLabel>{{ t('arrange.layout') }}</DropdownMenuLabel>
           <DropdownMenuItem v-for="layout in ARRANGE_LAYOUTS" :key="layout" @select="chooseLayout($event, layout)">
             <Check :class="cn(layout !== arrangeLayout && 'invisible')" />
@@ -142,6 +145,13 @@ function keepOpen(event: Event, action: 'toggle-autostart' | 'toggle-translucent
             <component :is="ANCHOR_ICONS[anchor]" />
             {{ t(`arrange.anchors.${anchor}`) }}
             <span v-if="anchor === arrangeAnchor" class="ml-auto text-[10px] text-muted-foreground">{{ t('arrange.lastUsed') }}</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem :title="t('arrange.snapHint')" @select="keepOpen($event, 'toggle-snap')">
+            <span class="flex size-3.5 items-center justify-center rounded-[3px] border border-input">
+              <Check v-if="snapWindows" class="size-3! text-foreground!" />
+            </span>
+            {{ t('arrange.snap') }}
           </DropdownMenuItem>
         </DropdownMenuSubContent>
       </DropdownMenuSub>

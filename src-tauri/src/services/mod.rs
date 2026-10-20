@@ -3,6 +3,7 @@ pub mod lifecycle;
 pub mod notes;
 pub mod settings;
 pub mod shortcut;
+pub mod snap;
 pub mod sync;
 pub mod transfer;
 pub mod tray;

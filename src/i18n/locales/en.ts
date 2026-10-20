@@ -86,6 +86,8 @@ const en: Messages = {
       'bottom-right': 'Bottom right',
       center: 'Center of screen',
     },
+    snap: 'Snap while dragging',
+    snapHint: 'Notes line up with other notes and the screen edges while you drag or resize them. Hold Alt to place freely.',
   },
 
   shortcuts: {

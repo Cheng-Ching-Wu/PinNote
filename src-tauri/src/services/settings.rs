@@ -5,7 +5,7 @@ use crate::error::AppResult;
 use crate::events;
 use crate::i18n;
 use crate::models::{AppSettings, AppSettingsPatch};
-use crate::services::{notes, tray, window};
+use crate::services::{notes, snap, tray, window};
 
 pub fn get(app: &AppHandle) -> AppResult<AppSettings> {
     app.state::<Database>().with_conn(|conn| repo::get(conn))
@@ -17,6 +17,9 @@ pub fn update(app: &AppHandle, patch: &AppSettingsPatch) -> AppResult<AppSetting
         .state::<Database>()
         .with_conn(|conn| repo::update(conn, patch))?;
     events::settings_changed(app, &settings);
+    if patch.snap_windows.is_some() {
+        snap::set_enabled(settings.snap_windows);
+    }
     if patch.language.is_some() {
         apply_language(app, &settings.language);
     }

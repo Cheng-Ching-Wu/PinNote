@@ -84,6 +84,8 @@ const zhTW = {
       'bottom-right': '右下角',
       center: '畫面中央',
     },
+    snap: '拖曳時吸附對齊',
+    snapHint: '拖曳或調整大小時，靠近其他便籤或螢幕邊緣會自動對齊；按住 Alt 可暫停',
   },
 
   shortcuts: {

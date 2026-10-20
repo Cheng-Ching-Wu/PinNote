@@ -8,6 +8,7 @@ use tauri::{
 use crate::error::AppResult;
 use crate::i18n::pick;
 use crate::models::{Note, NoteUpdate};
+use crate::services::snap;
 use crate::state::AppState;
 
 pub const MAIN_LABEL: &str = "main";
@@ -19,6 +20,11 @@ const NOTE_LABEL_PREFIX: &str = "note-";
 pub const COLLAPSED_HEIGHT: f64 = 32.0;
 pub const MIN_WIDTH: f64 = 180.0;
 pub const MIN_HEIGHT: f64 = 96.0;
+
+/// Spacing (logical px) used by both "arrange" and snapping:
+/// between two notes, and between a note and the work-area edge.
+pub const LAYOUT_GAP: f64 = 8.0;
+pub const LAYOUT_MARGIN: f64 = 8.0;
 
 fn search_title() -> &'static str {
     pick("PinNote 搜尋", "PinNote Search")
@@ -150,6 +156,7 @@ pub fn open_note_window(app: &AppHandle, note: &Note, focus: bool) -> AppResult<
         None => builder.center(),
     };
     let window = builder.build()?;
+    snap::attach(&window);
 
     // Exact placement must happen after the window is shown: while an undecorated
     // window is still hidden, Windows reports / applies its size including the
@@ -303,7 +310,7 @@ pub fn arrange_note_windows(
     windows.sort_by_key(|(_, position, _)| (position.y, position.x));
 
     let px = |logical: f64| (logical * scale).round() as i64;
-    let (margin, gap, step) = (px(16.0), px(12.0), px(32.0));
+    let (margin, gap, step) = (px(LAYOUT_MARGIN), px(LAYOUT_GAP), px(32.0));
     let area = (left + margin, top + margin, right - margin, bottom - margin);
     let sizes: Vec<(i64, i64)> = windows
         .iter()

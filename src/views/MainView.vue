@@ -234,6 +234,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <MainMenu
             :autostart="settings.autostart"
             :pinned-translucent="settings.settings.pinnedTranslucent"
+            :snap-windows="settings.settings.snapWindows"
             :language="settings.settings.language"
             @show-all="store.showAllNotes()"
             @arrange="(layout, anchor) => store.arrangeNotes(layout, anchor)"
@@ -243,6 +244,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             @manage-tags="tagManagerOpen = true"
             @cleanup-images="store.cleanupImages()"
             @toggle-translucent="settings.updateSettings({ pinnedTranslucent: !settings.settings.pinnedTranslucent })"
+            @toggle-snap="settings.updateSettings({ snapWindows: !settings.settings.snapWindows })"
             @export="store.exportNotes()"
             @import="store.importNotes()"
             @open-backups="settings.openBackupFolder()"
