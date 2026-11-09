@@ -85,8 +85,42 @@ jobs:
           npm test
           cargo test --manifest-path src-tauri/Cargo.toml
 
+      # WiX / NSIS that the bundler downloads from GitHub; cached so a flaky
+      # download (e.g. HTTP 504) can't fail the release.
+      - name: Cache bundler tools
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\tauri
+          key: tauri-bundler-tools-${{ runner.os }}-v1
+
       # Creates the tag on this commit when it doesn't exist yet (main / manual runs).
       - name: Build and upload to release
+        id: build
+        continue-on-error: true
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the update packages; the app checks them against `plugins.updater.pubkey`.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: v${{ needs.check.outputs.version }}
+          releaseName: PinNote v${{ needs.check.outputs.version }}
+          releaseCommitish: ${{ github.sha }}
+          releaseBody: 安裝檔見下方 Assets。目前尚未數位簽章，首次執行若出現 SmartScreen 警告請點「其他資訊」→「仍要執行」。
+          # Also attach latest.json for the in-app updater.
+          includeUpdaterJson: true
+          releaseDraft: true
+          prerelease: false
+
+      - name: Wait before retrying
+        if: steps.build.outcome == 'failure'
+        run: Start-Sleep -Seconds 30
+
+      # One more try for passing network errors; same settings as above.
+      # Compiled code is reused, so this only redoes bundling and upload.
+      - name: Build and upload to release (retry)
+        if: steps.build.outcome == 'failure'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
