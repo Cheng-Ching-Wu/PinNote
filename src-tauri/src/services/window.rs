@@ -109,6 +109,7 @@ pub fn open_note_window(app: &AppHandle, note: &Note, focus: bool) -> AppResult<
     if let Some(window) = app.get_webview_window(&label) {
         window.unminimize()?;
         window.show()?;
+        ensure_topmost(&window);
         if focus {
             window.set_focus()?;
         }
@@ -175,6 +176,51 @@ pub fn open_note_window(app: &AppHandle, note: &Note, focus: bool) -> AppResult<
     Ok(window)
 }
 
+/// How often pinned notes are checked for having lost their topmost state.
+pub const TOPMOST_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(3);
+
+/// Puts a pinned note back in the topmost band if Windows dropped it from there.
+/// `set_always_on_top(true)` can't do this: tao only calls `SetWindowPos` when
+/// its own flag changes, and the flag is still set.
+#[cfg(windows)]
+pub fn ensure_topmost(window: &WebviewWindow) {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE,
+        SWP_NOSIZE, WS_EX_TOPMOST,
+    };
+
+    if !window.is_always_on_top().unwrap_or(false) {
+        return;
+    }
+    let Ok(hwnd) = window.hwnd() else { return };
+    unsafe {
+        let style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE) as u32;
+        if style & WS_EX_TOPMOST.0 == 0 {
+            let _ = SetWindowPos(
+                hwnd,
+                Some(HWND_TOPMOST),
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+            );
+        }
+    }
+}
+
+#[cfg(not(windows))]
+pub fn ensure_topmost(_window: &WebviewWindow) {}
+
+/// Checks every note window (see `ensure_topmost`).
+pub fn ensure_notes_topmost(app: &AppHandle) {
+    for (label, window) in app.webview_windows() {
+        if note_id_from_label(&label).is_some() {
+            ensure_topmost(&window);
+        }
+    }
+}
+
 pub fn close_note_window(app: &AppHandle, id: &str) -> AppResult<bool> {
     match app.get_webview_window(&note_label(id)) {
         Some(window) => {
@@ -230,6 +276,7 @@ pub fn set_notes_hidden(app: &AppHandle, hidden: bool) -> AppResult<()> {
             window.hide()?;
         } else {
             window.show()?;
+            ensure_topmost(&window);
         }
     }
     app.state::<AppState>().set_notes_hidden(hidden);

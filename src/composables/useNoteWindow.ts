@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 
 import { GEOMETRY_SAVE_DELAY } from '@/constants/window'
 import type { NoteColor, NoteUpdate, WindowGeometry } from '@/models/note'
@@ -41,12 +41,20 @@ export function useNoteWindow(id: string) {
     stopWatching?.()
   })
 
+  // The window follows the stored state, so a change from anywhere (this
+  // button, sync from another device) also reaches the real window.
+  watch(
+    () => note.value?.alwaysOnTop,
+    (value) => {
+      if (value !== undefined) void windowService.setAlwaysOnTop(value)
+    },
+    { immediate: true },
+  )
+
   async function toggleAlwaysOnTop() {
     const current = note.value
     if (!current) return
-    const value = !current.alwaysOnTop
-    await windowService.setAlwaysOnTop(value)
-    await store.updateNote(id, { alwaysOnTop: value })
+    await store.updateNote(id, { alwaysOnTop: !current.alwaysOnTop })
   }
 
   async function toggleCollapsed() {

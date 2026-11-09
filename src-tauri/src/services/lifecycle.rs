@@ -69,6 +69,15 @@ pub fn startup(app: &AppHandle) -> AppResult<()> {
         }
     }
 
+    // Windows can drop a pinned note out of the topmost band (other apps, display
+    // changes); put it back. Win32 window calls belong on the main thread.
+    let handle = app.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(window::TOPMOST_CHECK_INTERVAL);
+        let app = handle.clone();
+        let _ = handle.run_on_main_thread(move || window::ensure_notes_topmost(&app));
+    });
+
     // Tray and shortcut failures must not prevent the app from running.
     if let Err(err) = tray::init(app) {
         eprintln!("[pinnote] failed to create tray icon: {err}");

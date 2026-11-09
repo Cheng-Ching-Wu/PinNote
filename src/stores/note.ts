@@ -116,11 +116,21 @@ export const useNoteStore = defineStore('note', () => {
     return note
   }
 
+  /** Latest `updateNote` call per note, so an older save's reply can't undo a newer change. */
+  const latestUpdate = new Map<string, number>()
+  let updateSeq = 0
+
   async function updateNote(id: string, data: NoteUpdate) {
+    const seq = ++updateSeq
+    latestUpdate.set(id, seq)
     const current = getById(id)
     if (current) upsert({ ...current, ...data })
     const saved = await run('errors.saveNote', () => noteRepository.updateNote(id, data))
-    if (saved) upsert(saved)
+    // A newer update is in flight: its reply (and `notes:changed`) carries the newest state.
+    if (saved && latestUpdate.get(id) === seq) {
+      upsert(saved)
+      latestUpdate.delete(id)
+    }
     return saved
   }
 
