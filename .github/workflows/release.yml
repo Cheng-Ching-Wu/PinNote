@@ -85,10 +85,53 @@ jobs:
           npm test
           cargo test --manifest-path src-tauri/Cargo.toml
 
-      # WiX / NSIS that the bundler downloads from GitHub; cached so a flaky
-      # download (e.g. HTTP 504) can't fail the release.
-      - name: Cache bundler tools
-        uses: actions/cache@v4
+      # WiX / NSIS that the bundler would download from GitHub Releases, which
+      # often answers HTTP 504. Fetched here with retries and cached right away
+      # (even if the build fails later), so the bundler finds them in place.
+      - name: Restore bundler tools
+        id: tools-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~\AppData\Local\tauri
+          key: tauri-bundler-tools-${{ runner.os }}-v1
+
+      - name: Download bundler tools
+        if: steps.tools-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          function Get-WithRetry([string]$Url, [string]$OutFile) {
+            for ($i = 1; $i -le 6; $i++) {
+              try {
+                Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing
+                return
+              } catch {
+                Write-Host "Attempt $i failed for ${Url}: $_"
+                Start-Sleep -Seconds (15 * $i)
+              }
+            }
+            throw "Could not download $Url"
+          }
+
+          # Same versions / layout the Tauri bundler uses (%LOCALAPPDATA%\tauri).
+          $tools = Join-Path $env:LOCALAPPDATA 'tauri'
+          New-Item -ItemType Directory -Force $tools | Out-Null
+          $tmp = $env:RUNNER_TEMP
+
+          Get-WithRetry 'https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip' "$tmp\wix.zip"
+          Expand-Archive "$tmp\wix.zip" -DestinationPath "$tools\WixTools314" -Force
+
+          Get-WithRetry 'https://github.com/tauri-apps/binary-releases/releases/download/nsis-3.11/nsis-3.11.zip' "$tmp\nsis.zip"
+          Expand-Archive "$tmp\nsis.zip" -DestinationPath $tmp -Force
+          Move-Item "$tmp\nsis-3.11" "$tools\NSIS"
+
+          $plugins = "$tools\NSIS\Plugins\x86-unicode"
+          New-Item -ItemType Directory -Force "$plugins\additional" | Out-Null
+          Get-WithRetry 'https://github.com/tauri-apps/nsis-tauri-utils/releases/download/nsis_tauri_utils-v0.5.3/nsis_tauri_utils.dll' "$plugins\additional\nsis_tauri_utils.dll"
+          Copy-Item "$plugins\additional\nsis_tauri_utils.dll" $plugins
+
+      - name: Save bundler tools
+        if: steps.tools-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
         with:
           path: ~\AppData\Local\tauri
           key: tauri-bundler-tools-${{ runner.os }}-v1
